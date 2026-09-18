@@ -2,3 +2,5 @@
 .idea/
 *.iml
 
+# Local environment overrides
+.env

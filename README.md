@@ -6,10 +6,45 @@ requests made for consumers with an active voluntary credit ban.
 
 ## Current status
 
-The repository currently contains the reviewed design baseline. Application
-code, automated tests, local-run commands and deployment configuration have
-not been added yet. This README describes the target PoC and will be updated
-with executable instructions as implementation progresses.
+The repository contains the reviewed design baseline, a Spring Boot backend
+bootstrap and an executable local PostgreSQL setup with Flyway migrations.
+The frontend, monitoring service and business flows are not implemented yet.
+
+## Local database
+
+Requirements: Docker with Compose and Java 21.
+
+Start PostgreSQL from the repository root:
+
+```bash
+docker compose up -d postgres
+```
+
+Then start the backend. Flyway applies the database migration automatically:
+
+```bash
+cd backend
+./gradlew bootRun
+```
+
+The local defaults are database `credit_lens_backend`, user `credit_lens`,
+password `credit_lens` and port `5432`. To override the Docker settings, copy
+`.env.example` to `.env`. Supply matching backend settings with `DB_URL`,
+`DB_USER` and `DB_PASSWORD`.
+
+Check the container or stop it while preserving data:
+
+```bash
+docker compose ps
+docker compose down
+```
+
+To intentionally remove the local database data as well, run
+`docker compose down --volumes`.
+
+Run the backend tests with `./gradlew test` from `backend/`. The database
+integration test starts a disposable PostgreSQL container and verifies that
+Flyway applies the schema successfully.
 
 ## Assignment coverage
 
