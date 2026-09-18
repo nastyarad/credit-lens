@@ -7,8 +7,24 @@ requests made for consumers with an active voluntary credit ban.
 ## Current status
 
 The repository contains the reviewed design baseline, a Spring Boot backend
-bootstrap and an executable local PostgreSQL setup with Flyway migrations.
-The frontend, monitoring service and business flows are not implemented yet.
+bootstrap, an executable local PostgreSQL setup with Flyway migrations and a
+React/TypeScript frontend bootstrap. The monitoring service and business flows
+are not implemented yet.
+
+## Local frontend
+
+Requirements: Node.js 22.12 or newer and npm 11 or newer.
+
+Start the Vite development server from the repository root:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Open `http://localhost:5173`. Requests under `/api` are proxied to the backend
+at `http://localhost:8080` during local development.
 
 ## Local database
 
