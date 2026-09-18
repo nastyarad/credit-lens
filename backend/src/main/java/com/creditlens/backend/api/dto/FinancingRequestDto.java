@@ -24,5 +24,12 @@ public record FinancingRequestDto(
         creditRegisterExtractPurposes = List.copyOf(creditRegisterExtractPurposes);
         Objects.requireNonNull(status, "status must not be null");
         Objects.requireNonNull(requestedAt, "requestedAt must not be null");
+        ApiValidation.requireValidFinancingRequestState(
+                status,
+                requestedAt,
+                completedAt,
+                error,
+                creditExtractSummary
+        );
     }
 }

@@ -6,6 +6,6 @@ public record FinancingRequestErrorDto(FinancingRequestErrorCodeDto code, String
 
     public FinancingRequestErrorDto {
         Objects.requireNonNull(code, "code must not be null");
-        Objects.requireNonNull(message, "message must not be null");
+        message = message == null || message.isBlank() ? code.defaultMessage() : message;
     }
 }

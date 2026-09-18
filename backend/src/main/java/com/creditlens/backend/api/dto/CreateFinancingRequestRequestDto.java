@@ -22,4 +22,11 @@ public record CreateFinancingRequestRequestDto(
                 ? null
                 : List.copyOf(creditRegisterExtractPurposes);
     }
+
+    @Override
+    public String toString() {
+        return "CreateFinancingRequestRequestDto[clientRequestId=" + clientRequestId
+                + ", personalIdentityCode=<redacted>"
+                + ", creditRegisterExtractPurposes=" + creditRegisterExtractPurposes + "]";
+    }
 }
