@@ -4,3 +4,5 @@
 
 # Local environment overrides
 .env
+
+.DS_Store
