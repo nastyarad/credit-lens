@@ -4,10 +4,8 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 public record LumpSumLoanDto(
-        BigDecimal amountIssued,
-        BigDecimal amountPaid,
-        BigDecimal balance,
-        LocalDate plannedFinalDueDate,
-        Integer amortizationFrequency
-) {
-}
+    BigDecimal amountIssued,
+    BigDecimal amountPaid,
+    BigDecimal balance,
+    LocalDate plannedFinalDueDate,
+    Integer amortizationFrequency) {}
