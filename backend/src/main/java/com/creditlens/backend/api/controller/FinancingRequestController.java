@@ -4,34 +4,32 @@ import com.creditlens.backend.api.dto.CreateFinancingRequestRequest;
 import com.creditlens.backend.api.dto.CreateFinancingRequestResponse;
 import com.creditlens.backend.service.FinancingRequestService;
 import jakarta.validation.Valid;
+import java.net.URI;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.net.URI;
-
 @RestController
 @RequestMapping("/api/v1/financing-requests")
 public class FinancingRequestController {
 
-    private final FinancingRequestService financingRequestService;
+  private final FinancingRequestService financingRequestService;
 
-    public FinancingRequestController(FinancingRequestService financingRequestService) {
-        this.financingRequestService = financingRequestService;
+  public FinancingRequestController(FinancingRequestService financingRequestService) {
+    this.financingRequestService = financingRequestService;
+  }
+
+  @PostMapping
+  public ResponseEntity<CreateFinancingRequestResponse> create(
+      @Valid @RequestBody CreateFinancingRequestRequest request) {
+    CreateFinancingRequestResponse response = financingRequestService.create(request);
+    if (!response.newlyCreated()) {
+      return ResponseEntity.ok(response);
     }
 
-    @PostMapping
-    public ResponseEntity<CreateFinancingRequestResponse> create(
-            @Valid @RequestBody CreateFinancingRequestRequest request
-    ) {
-        CreateFinancingRequestResponse response = financingRequestService.create(request);
-        if (!response.newlyCreated()) {
-            return ResponseEntity.ok(response);
-        }
-
-        URI location = URI.create("/api/v1/financing-requests/" + response.id());
-        return ResponseEntity.created(location).body(response);
-    }
+    URI location = URI.create("/api/v1/financing-requests/" + response.id());
+    return ResponseEntity.created(location).body(response);
+  }
 }

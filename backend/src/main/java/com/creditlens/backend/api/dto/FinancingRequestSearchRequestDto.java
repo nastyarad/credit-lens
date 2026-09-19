@@ -6,21 +6,23 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 
 public record FinancingRequestSearchRequestDto(
-        @NotBlank
-        @Pattern(regexp = ApiValidation.PERSONAL_IDENTITY_CODE_PATTERN)
+    @NotBlank @Pattern(regexp = ApiValidation.PERSONAL_IDENTITY_CODE_PATTERN)
         String personalIdentityCode,
-        @Min(0) Integer page,
-        @Min(1) @Max(100) Integer size
-) {
+    @Min(0) Integer page,
+    @Min(1) @Max(100) Integer size) {
 
-    public FinancingRequestSearchRequestDto {
-        page = page == null ? 0 : page;
-        size = size == null ? 20 : size;
-    }
+  public FinancingRequestSearchRequestDto {
+    page = page == null ? 0 : page;
+    size = size == null ? 20 : size;
+  }
 
-    @Override
-    public String toString() {
-        return "FinancingRequestSearchRequestDto[personalIdentityCode=<redacted>"
-                + ", page=" + page + ", size=" + size + "]";
-    }
+  @Override
+  public String toString() {
+    return "FinancingRequestSearchRequestDto[personalIdentityCode=<redacted>"
+        + ", page="
+        + page
+        + ", size="
+        + size
+        + "]";
+  }
 }

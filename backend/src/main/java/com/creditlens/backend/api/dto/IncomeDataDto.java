@@ -4,7 +4,7 @@ import java.util.List;
 
 public record IncomeDataDto(int year, List<MonthlyIncomeDto> months) {
 
-    public IncomeDataDto {
-        months = List.copyOf(months);
-    }
+  public IncomeDataDto {
+    months = List.copyOf(months);
+  }
 }
