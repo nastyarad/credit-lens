@@ -105,20 +105,19 @@ database directly. Each service owns its data.
 Library choices may be adjusted during implementation without changing the
 service boundaries or domain contracts.
 
-## Main flows
+## Main flow
 
 ### Request and view a credit extract
 
 1. The frontend assigns a `clientRequestId` to one user submission.
-2. The backend validates the personal identity code and persists an
-   `IN_PROGRESS` `FinancingRequest`.
-3. The backend calls the register mock without holding a database transaction.
-4. A valid response is stored as an immutable `CreditExtract` and the request
-   becomes `COMPLETED`.
-5. A timeout, rejection or invalid response leaves a visible `FAILED` history
-   entry.
-6. The frontend can search a consumer's history and open each request in
-   detail.
+2. The backend validates the request and checks for an existing successful
+   request with that ID.
+3. For a new request, it calls the register mock synchronously without an open
+   database transaction.
+4. After a valid response, one short transaction stores Consumer,
+   FinancingRequest and immutable CreditExtract.
+5. A PCR error returns problem details and leaves no database record.
+6. The frontend can view only successfully stored fetches in history/details.
 
 A technical retry reuses the same `clientRequestId`, so the register is not
 called twice for one submission.
@@ -148,10 +147,9 @@ The official PCR reference used for the mock is
 ## Resilience and error handling
 
 - Connection and read timeouts are configured for the register client.
-- Register failures are mapped to stable codes such as `PCR_TIMEOUT`,
-  `PCR_UNAVAILABLE`, `PCR_REJECTED` and `PCR_INVALID_RESPONSE`.
-- An interrupted request remains visible and is reconciled to
-  `PCR_CALL_INTERRUPTED`.
+- Register failures are mapped to safe problem details: timeout is `504`,
+  unavailable/invalid responses are `502`, and PCR rejection is `422`.
+- Failed calls are not stored and do not appear in history.
 - No database transaction stays open during an HTTP or SMTP call.
 - Report creation is unique per interval.
 - Email delivery is retried from persisted state without rebuilding a report.
@@ -186,7 +184,7 @@ They are required before any production use.
 Included:
 
 - the standard successful register response for a living consumer;
-- request history with both successful and failed requests;
+- request history containing only successfully persisted fetches;
 - one scheduled email report per interval;
 - local mocks for the register and email provider.
 

@@ -10,10 +10,8 @@ public record FinancingRequestDetailsDto(
         UUID clientRequestId,
         ConsumerDto consumer,
         List<CreditRegisterExtractPurposeDto> creditRegisterExtractPurposes,
-        FinancingRequestStatusDto status,
         Instant requestedAt,
         Instant completedAt,
-        FinancingRequestErrorDto error,
         CreditExtractDto creditExtract
 ) {
 
@@ -22,14 +20,11 @@ public record FinancingRequestDetailsDto(
         Objects.requireNonNull(clientRequestId, "clientRequestId must not be null");
         Objects.requireNonNull(consumer, "consumer must not be null");
         creditRegisterExtractPurposes = List.copyOf(creditRegisterExtractPurposes);
-        Objects.requireNonNull(status, "status must not be null");
         Objects.requireNonNull(requestedAt, "requestedAt must not be null");
-        ApiValidation.requireValidFinancingRequestState(
-                status,
-                requestedAt,
-                completedAt,
-                error,
-                creditExtract
-        );
+        Objects.requireNonNull(completedAt, "completedAt must not be null");
+        Objects.requireNonNull(creditExtract, "creditExtract must not be null");
+        if (completedAt.isBefore(requestedAt)) {
+            throw new IllegalArgumentException("completedAt must not be before requestedAt");
+        }
     }
 }
