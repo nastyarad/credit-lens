@@ -1,0 +1,1 @@
+{"priority":100,"request":{"method":"POST","url":"/GetCreditRegisterExtract"},"response":{"status":400,"headers":{"Content-Type":"application/json"},"bodyFileName":"rejected.json"}}

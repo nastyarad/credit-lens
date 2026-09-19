@@ -36,6 +36,41 @@ Start PostgreSQL from the repository root:
 docker compose up -d postgres
 ```
 
+Start the local PCR 2.1 WireMock together with PostgreSQL:
+
+```bash
+docker compose up -d postgres wiremock
+```
+
+WireMock listens on `http://localhost:8081` and emulates
+`POST /GetCreditRegisterExtract`. The backend HTTP adapter is configured with
+`PCR_BASE_URL`, `PCR_TARGET_ENVIRONMENT`, `PCR_OWNER_ID_CODE_TYPE`,
+`PCR_OWNER_ID_CODE`, `PCR_OWNER_COUNTRY_CODE`, `PCR_CONNECT_TIMEOUT` and
+`PCR_READ_TIMEOUT` (see `.env.example`). The mock does not implement mTLS or
+certificate authentication; those are required by the real PCR service.
+
+Example request through Credit Lens:
+
+```bash
+curl -X POST http://localhost:8080/api/v1/financing-requests \
+  -H 'Content-Type: application/json' \
+  -d '{"clientRequestId":"ec2364ec-b4ed-4af7-805c-2bd44c42b9d5","personalIdentityCode":"010190-123A","creditRegisterExtractPurposes":["NewConsumerCredit"]}'
+```
+
+The WireMock identity-code scenarios are deterministic:
+
+| Identity code | Scenario |
+| --- | --- |
+| `010190-123A` | Full successful extract, no voluntary ban |
+| `020290-123A` | Successful extract with active `RiskOfIdentityTheft` ban |
+| `030390-123A` | PCR-shaped HTTP 400 rejection |
+| `040490-123A` | HTTP 503 unavailable |
+| `050590-123A` | HTTP 200 with missing extract |
+| `060690-123A` | Fixed delay beyond the default read timeout |
+
+Unknown identity codes use the PCR-shaped `E20` HTTP 400 fallback. Fixtures
+are under `wiremock/mappings` and `wiremock/__files`.
+
 Then start the backend. Flyway applies the database migration automatically:
 
 ```bash
@@ -143,6 +178,13 @@ called twice for one submission.
 
 The official PCR reference used for the mock is
 [Requesting a credit register extract - API description, version 2.1](https://www.vero.fi/globalassets/pore/dokumentaatio-2026/requesting-a-credit-register-extract---api-description_2.1.pdf).
+
+The adapter currently maps the PCR 2.1 fields represented by the Credit Lens
+domain: extract reference/time, requested person, voluntary ban, summary,
+repayment and leasing totals, loans/collaterals/delayed amounts/foreclosure,
+and income data. PCR 2.1 `businessInformation`, `defermentPeriods`,
+`repaymentMethod` and `purposeOfUse` are intentionally ignored because no
+corresponding public Credit Lens domain/API fields exist yet.
 
 ## Resilience and error handling
 

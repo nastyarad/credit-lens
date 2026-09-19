@@ -1,0 +1,1 @@
+{"statusMessage":"Failed to process the request.","correlationId":"11111111-1111-1111-1111-111111111111","errorResponses":[{"fieldName":"IdCode","errorCode":"E20","errorDescription":"IdCode not found in the register."}]}
