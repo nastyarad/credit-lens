@@ -1,10 +1,8 @@
 package com.creditlens.backend.api.controller;
 
-import com.creditlens.backend.api.dto.CreateFinancingRequestRequestDto;
-import com.creditlens.backend.api.dto.FinancingRequestDto;
-import com.creditlens.backend.api.mapper.FinancingRequestApiMapper;
-import com.creditlens.backend.application.CreateFinancingRequestResult;
-import com.creditlens.backend.application.CreateFinancingRequestUseCase;
+import com.creditlens.backend.api.dto.CreateFinancingRequestRequest;
+import com.creditlens.backend.api.dto.CreateFinancingRequestResponse;
+import com.creditlens.backend.service.FinancingRequestService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -18,24 +16,18 @@ import java.net.URI;
 @RequestMapping("/api/v1/financing-requests")
 public class FinancingRequestController {
 
-    private final CreateFinancingRequestUseCase createFinancingRequest;
-    private final FinancingRequestApiMapper mapper;
+    private final FinancingRequestService financingRequestService;
 
-    public FinancingRequestController(
-            CreateFinancingRequestUseCase createFinancingRequest,
-            FinancingRequestApiMapper mapper
-    ) {
-        this.createFinancingRequest = createFinancingRequest;
-        this.mapper = mapper;
+    public FinancingRequestController(FinancingRequestService financingRequestService) {
+        this.financingRequestService = financingRequestService;
     }
 
     @PostMapping
-    public ResponseEntity<FinancingRequestDto> create(
-            @Valid @RequestBody CreateFinancingRequestRequestDto request
+    public ResponseEntity<CreateFinancingRequestResponse> create(
+            @Valid @RequestBody CreateFinancingRequestRequest request
     ) {
-        CreateFinancingRequestResult result = createFinancingRequest.execute(mapper.toCommand(request));
-        FinancingRequestDto response = mapper.toDto(result.financingRequest());
-        if (!result.created()) {
+        CreateFinancingRequestResponse response = financingRequestService.create(request);
+        if (!response.newlyCreated()) {
             return ResponseEntity.ok(response);
         }
 

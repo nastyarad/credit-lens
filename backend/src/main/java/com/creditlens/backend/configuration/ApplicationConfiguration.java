@@ -1,4 +1,4 @@
-package com.creditlens.backend.application;
+package com.creditlens.backend.configuration;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

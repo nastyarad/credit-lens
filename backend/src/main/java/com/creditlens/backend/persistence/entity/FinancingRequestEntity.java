@@ -3,11 +3,8 @@ package com.creditlens.backend.persistence.entity;
 import com.creditlens.backend.domain.CreditExtract;
 import com.creditlens.backend.domain.CreditRegisterExtractPurpose;
 import com.creditlens.backend.domain.FinancingRequest;
-import com.creditlens.backend.domain.FinancingRequestStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
@@ -39,21 +36,11 @@ public class FinancingRequestEntity {
     @Column(name = "extract_purposes", nullable = false, columnDefinition = "varchar[]")
     private String[] extractPurposes;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false, length = 16)
-    private FinancingRequestStatus status;
-
     @Column(name = "requested_at", nullable = false)
     private Instant requestedAt;
 
-    @Column(name = "completed_at")
+    @Column(name = "completed_at", nullable = false)
     private Instant completedAt;
-
-    @Column(name = "error_code", length = 64)
-    private String errorCode;
-
-    @Column(name = "error_message", length = 500)
-    private String errorMessage;
 
     protected FinancingRequestEntity() {
     }
@@ -63,11 +50,8 @@ public class FinancingRequestEntity {
         this.consumer = consumer;
         clientRequestId = request.clientRequestId();
         extractPurposes = request.extractPurposes().stream().map(Enum::name).toArray(String[]::new);
-        status = request.status();
         requestedAt = request.requestedAt();
         completedAt = request.completedAt();
-        errorCode = request.errorCode();
-        errorMessage = request.errorMessage();
     }
 
     public FinancingRequest toDomain(CreditExtract creditExtract) {
@@ -79,22 +63,10 @@ public class FinancingRequestEntity {
                 clientRequestId,
                 consumer.toDomain(),
                 purposes,
-                status,
                 requestedAt,
                 completedAt,
-                errorCode,
-                errorMessage,
                 creditExtract
         );
-    }
-
-    public void complete(CreditExtract extract, Instant completionTime) {
-        FinancingRequest request = toDomain(null);
-        request.complete(extract, completionTime);
-        status = request.status();
-        completedAt = request.completedAt();
-        errorCode = request.errorCode();
-        errorMessage = request.errorMessage();
     }
 
     public UUID getId() {
@@ -113,10 +85,6 @@ public class FinancingRequestEntity {
         return extractPurposes.clone();
     }
 
-    public FinancingRequestStatus getStatus() {
-        return status;
-    }
-
     public Instant getRequestedAt() {
         return requestedAt;
     }
@@ -125,11 +93,4 @@ public class FinancingRequestEntity {
         return completedAt;
     }
 
-    public String getErrorCode() {
-        return errorCode;
-    }
-
-    public String getErrorMessage() {
-        return errorMessage;
-    }
 }

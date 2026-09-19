@@ -10,36 +10,15 @@ CREATE TABLE financing_request (
     consumer_id UUID NOT NULL,
     client_request_id UUID NOT NULL,
     extract_purposes VARCHAR[] NOT NULL,
-    status VARCHAR(16) NOT NULL,
     requested_at TIMESTAMPTZ NOT NULL,
-    completed_at TIMESTAMPTZ,
-    error_code VARCHAR(64),
-    error_message VARCHAR(500),
+    completed_at TIMESTAMPTZ NOT NULL,
     CONSTRAINT fk_financing_request_consumer
         FOREIGN KEY (consumer_id) REFERENCES consumer (id),
     CONSTRAINT uq_financing_request_client_request_id UNIQUE (client_request_id),
     CONSTRAINT ck_financing_request_extract_purposes_not_empty
         CHECK (cardinality(extract_purposes) > 0),
-    CONSTRAINT ck_financing_request_status
-        CHECK (status IN ('IN_PROGRESS', 'COMPLETED', 'FAILED')),
-    CONSTRAINT ck_financing_request_state
-        CHECK (
-            (status = 'IN_PROGRESS'
-                AND completed_at IS NULL
-                AND error_code IS NULL
-                AND error_message IS NULL)
-            OR
-            (status = 'COMPLETED'
-                AND completed_at IS NOT NULL
-                AND error_code IS NULL
-                AND error_message IS NULL)
-            OR
-            (status = 'FAILED'
-                AND completed_at IS NOT NULL
-                AND error_code IS NOT NULL)
-        ),
     CONSTRAINT ck_financing_request_completion_time
-        CHECK (completed_at IS NULL OR completed_at >= requested_at)
+        CHECK (completed_at >= requested_at)
 );
 
 CREATE TABLE credit_extract (
@@ -91,8 +70,7 @@ CREATE INDEX ix_financing_request_consumer_history
     ON financing_request (consumer_id, requested_at DESC, id DESC);
 
 CREATE INDEX ix_financing_request_completed
-    ON financing_request (completed_at, id)
-    WHERE status = 'COMPLETED';
+    ON financing_request (completed_at, id);
 
 CREATE INDEX ix_credit_extract_active_ban
     ON credit_extract (financing_request_id)

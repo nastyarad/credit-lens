@@ -8,7 +8,6 @@ public record FinancingRequestHistoryItemDto(
         UUID id,
         UUID clientRequestId,
         String maskedPersonalIdentityCode,
-        FinancingRequestStatusDto status,
         Instant requestedAt,
         Instant completedAt,
         UUID extractReference,
@@ -19,7 +18,9 @@ public record FinancingRequestHistoryItemDto(
         Objects.requireNonNull(id, "id must not be null");
         Objects.requireNonNull(clientRequestId, "clientRequestId must not be null");
         Objects.requireNonNull(maskedPersonalIdentityCode, "maskedPersonalIdentityCode must not be null");
-        Objects.requireNonNull(status, "status must not be null");
         Objects.requireNonNull(requestedAt, "requestedAt must not be null");
+        Objects.requireNonNull(completedAt, "completedAt must not be null");
+        Objects.requireNonNull(extractReference, "extractReference must not be null");
+        Objects.requireNonNull(voluntaryCreditBanActive, "voluntaryCreditBanActive must not be null");
     }
 }

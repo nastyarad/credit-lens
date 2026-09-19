@@ -1,4 +1,4 @@
-package com.creditlens.backend.application;
+package com.creditlens.backend.service;
 
 public class ClientRequestConflictException extends RuntimeException {
 

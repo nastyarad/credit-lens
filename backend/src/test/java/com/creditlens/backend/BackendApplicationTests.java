@@ -1,6 +1,7 @@
 package com.creditlens.backend;
 
 import com.creditlens.backend.integration.pcr.PositiveCreditRegisterClient;
+import com.creditlens.backend.integration.pcr.PositiveCreditRegisterException;
 import com.creditlens.backend.persistence.entity.CreditExtractEntity;
 import com.creditlens.backend.persistence.repository.CreditExtractRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,6 +26,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -93,10 +95,11 @@ class BackendApplicationTests {
 				.andExpect(content().contentTypeCompatibleWith("application/json"))
 				.andExpect(jsonPath("$.clientRequestId").value(clientRequestId.toString()))
 				.andExpect(jsonPath("$.consumer.maskedPersonalIdentityCode").value("******-123A"))
-				.andExpect(jsonPath("$.status").value("COMPLETED"))
 				.andExpect(jsonPath("$.requestedAt").isNotEmpty())
 				.andExpect(jsonPath("$.completedAt").isNotEmpty())
+				.andExpect(jsonPath("$.status").doesNotExist())
 				.andExpect(jsonPath("$.error").doesNotExist())
+				.andExpect(jsonPath("$.newlyCreated").doesNotExist())
 				.andExpect(jsonPath("$.creditExtractSummary.extractReference").isNotEmpty())
 				.andExpect(jsonPath("$.creditExtractSummary.lendersCount").value(0))
 				.andExpect(jsonPath("$.creditExtractSummary.loanContractsCount").value(0))
@@ -113,11 +116,10 @@ class BackendApplicationTests {
 		assertThat(jdbcTemplate.queryForObject("SELECT count(*) FROM credit_extract", Integer.class)).isEqualTo(1);
 
 		Map<String, Object> requestRow = jdbcTemplate.queryForMap("""
-				SELECT status, requested_at, completed_at
+				SELECT requested_at, completed_at
 				FROM financing_request
 				WHERE client_request_id = ?
 				""", clientRequestId);
-		assertThat(requestRow.get("status")).isEqualTo("COMPLETED");
 		Instant requestedAt = ((java.sql.Timestamp) requestRow.get("requested_at")).toInstant();
 		Instant completedAt = ((java.sql.Timestamp) requestRow.get("completed_at")).toInstant();
 		assertThat(completedAt).isAfterOrEqualTo(requestedAt);
@@ -163,7 +165,7 @@ class BackendApplicationTests {
 					.contentType("application/json")
 					.content(originalRequest))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.status").value("COMPLETED"));
+				.andExpect(jsonPath("$.creditExtractSummary").isNotEmpty());
 
 		assertThat(jdbcTemplate.queryForObject("SELECT count(*) FROM consumer", Integer.class)).isEqualTo(1);
 		assertThat(jdbcTemplate.queryForObject("SELECT count(*) FROM financing_request", Integer.class)).isEqualTo(1);
@@ -180,6 +182,27 @@ class BackendApplicationTests {
 
 		assertThat(jdbcTemplate.queryForObject("SELECT count(*) FROM financing_request", Integer.class)).isEqualTo(1);
 		verify(positiveCreditRegisterClient, times(1)).requestCreditExtract(any(), any());
+	}
+
+	@Test
+	void doesNotPersistAnythingWhenPcrTimesOut() throws Exception {
+		UUID clientRequestId = UUID.randomUUID();
+		doThrow(new PositiveCreditRegisterException(PositiveCreditRegisterException.Kind.TIMEOUT))
+				.when(positiveCreditRegisterClient).requestCreditExtract(any(), any());
+
+		mockMvc.perform(post("/api/v1/financing-requests")
+				.contentType("application/json")
+				.content(createRequest(clientRequestId, "010190-123A", "NewConsumerCredit")))
+				.andExpect(status().isGatewayTimeout())
+				.andExpect(content().contentTypeCompatibleWith("application/problem+json"))
+				.andExpect(jsonPath("$.status").value(504))
+				.andExpect(jsonPath("$.detail").value(
+						"The Positive Credit Register request could not be completed."))
+				.andExpect(jsonPath("$.detail").value(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("010190-123A"))));
+
+		assertThat(jdbcTemplate.queryForObject("SELECT count(*) FROM consumer", Integer.class)).isZero();
+		assertThat(jdbcTemplate.queryForObject("SELECT count(*) FROM financing_request", Integer.class)).isZero();
+		assertThat(jdbcTemplate.queryForObject("SELECT count(*) FROM credit_extract", Integer.class)).isZero();
 	}
 
 	private static String createRequest(UUID clientRequestId, String personalIdentityCode, String purpose) {
