@@ -18,5 +18,20 @@ services:
       retries: 10
       start_period: 5s
 
+  wiremock:
+    image: wiremock/wiremock:3.13.2
+    ports:
+      - "${WIREMOCK_PORT:-8081}:8080"
+    volumes:
+      - ./wiremock/mappings:/home/wiremock/mappings:ro
+      - ./wiremock/__files:/home/wiremock/__files:ro
+    command: ["--global-response-templating"]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://localhost:8080/__admin/health | grep -q -i ok"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
 volumes:
   credit-lens-postgres-data:

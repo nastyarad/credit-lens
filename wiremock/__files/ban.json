@@ -1,0 +1,10 @@
+{
+  "creditRegisterExtract": {
+    "extractReference": "8b1e6f6a-51a7-4cc4-b2c8-5f3c2f6a3d11",
+    "creationTimeUtc": "2026-09-18T11:15:30Z",
+    "personRequested": {"idCode": "020290-123A"},
+    "voluntaryBanOnCredits": {"isInEffect": true, "reason": "RiskOfIdentityTheft"},
+    "creditInformationSummary": {"lendersCount": 0, "loanContractsCount": 0, "guaranteedLoanContractsCount": 0},
+    "repaymentsPaidLastAmount": [], "sumOfMonthlyLeasingInstalments": [], "loans": [], "incomeData": []
+  }
+}

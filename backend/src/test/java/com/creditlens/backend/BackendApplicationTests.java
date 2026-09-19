@@ -1,5 +1,8 @@
 package com.creditlens.backend;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.okJson;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.clearInvocations;
@@ -17,16 +20,20 @@ import com.creditlens.backend.integration.pcr.PositiveCreditRegisterClient;
 import com.creditlens.backend.integration.pcr.PositiveCreditRegisterException;
 import com.creditlens.backend.persistence.entity.CreditExtractEntity;
 import com.creditlens.backend.persistence.repository.CreditExtractRepository;
+import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
@@ -38,6 +45,15 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 @Testcontainers
 @AutoConfigureMockMvc
 class BackendApplicationTests {
+
+  @RegisterExtension
+  static final WireMockExtension wireMock =
+      WireMockExtension.newInstance().options(options().dynamicPort()).build();
+
+  @DynamicPropertySource
+  static void pcrProperties(DynamicPropertyRegistry registry) {
+    registry.add("pcr.base-url", wireMock::baseUrl);
+  }
 
   @Container @ServiceConnection
   static final PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:17-alpine");
@@ -56,6 +72,15 @@ class BackendApplicationTests {
     jdbcTemplate.update("DELETE FROM financing_request");
     jdbcTemplate.update("DELETE FROM consumer");
     clearInvocations(positiveCreditRegisterClient);
+    wireMock.resetAll();
+    wireMock.stubFor(
+        com.github.tomakehurst.wiremock.client.WireMock.post(
+                urlEqualTo("/GetCreditRegisterExtract"))
+            .willReturn(
+                okJson(
+                    """
+                {"creditRegisterExtract":{"extractReference":"2fdc1e0b-91d8-4d7c-9d4c-82df9c3b2a10","creationTimeUtc":"2026-09-18T10:15:30Z","personRequested":{"idCode":"010190-123A"},"creditInformationSummary":{"lendersCount":0,"loanContractsCount":0,"guaranteedLoanContractsCount":0},"repaymentsPaidLastAmount":[],"sumOfMonthlyLeasingInstalments":[],"loans":[],"incomeData":[]}}
+                """)));
   }
 
   @Test

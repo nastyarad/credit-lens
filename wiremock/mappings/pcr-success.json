@@ -1,0 +1,5 @@
+{
+  "priority": 1,
+  "request": {"method":"POST","url":"/GetCreditRegisterExtract","bodyPatterns":[{"matchesJsonPath":"$[?(@.targetEnvironment == 'Test')]"},{"matchesJsonPath":"$[?(@.owner.idCodeType == 'BusinessId' && @.owner.idCode == '1234567-8')]"},{"matchesJsonPath":"$[?(@.idCodeType == 'PersonalIdentityCode' && @.idCode == '010190-123A')]"},{"matchesJsonPath":"$[?(@.creditRegisterExtractPurpose.size() > 0)]"}]},
+  "response": {"status":200,"headers":{"Content-Type":"application/json"},"bodyFileName":"success.json"}
+}

@@ -1,0 +1,1 @@
+{"priority":1,"request":{"method":"POST","url":"/GetCreditRegisterExtract","bodyPatterns":[{"matchesJsonPath":"$[?(@.idCode == '040490-123A')]"}]},"response":{"status":503,"headers":{"Content-Type":"application/json"},"bodyFileName":"rejected.json"}}
