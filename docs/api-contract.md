@@ -85,26 +85,4 @@ financing-request status. Results remain ordered by `completedAt` and ID.
 
 ## Sequence
 
-```mermaid
-sequenceDiagram
-    participant C as Controller
-    participant S as Service
-    participant DB as Repositories
-    participant PCR as Mock PCR
-    C->>S: create(request)
-    S->>DB: find(clientRequestId)
-    alt existing matching request
-        DB-->>S: saved request + extract
-        S-->>C: response, 200
-    else new request
-        S->>PCR: request extract (no DB transaction)
-        PCR-->>S: extract or error
-        alt success
-            S->>DB: one transaction: Consumer + Request + Extract
-            DB-->>S: committed
-            S-->>C: response, 201 + Location
-        else error
-            S-->>C: problem detail; no writes
-        end
-    end
-```
+![Credit Lens request sequence](images/sequence.svg)

@@ -110,17 +110,7 @@ The planned solution covers the three required components:
 
 ## Architecture
 
-```mermaid
-flowchart LR
-    U[User] --> FE[React frontend]
-    FE -->|Frontend API| BE[Java backend]
-    BE --> BDB[(Backend PostgreSQL)]
-    BE -->|Credit extract request| PCR[Positive Credit Register mock]
-
-    MS[Java monitoring service] -->|Monitoring API| BE
-    MS --> MDB[(Monitoring PostgreSQL)]
-    MS -->|Email| SMTP[Local SMTP provider]
-```
+![Credit Lens architecture](docs/images/architecture.svg)
 
 The monitoring service uses the backend API and never reads the backend
 database directly. Each service owns its data.

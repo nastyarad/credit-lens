@@ -5,14 +5,7 @@ Version: `v2`
 The backend owns three tables. A FinancingRequest is created only after a
 successful PCR response, so every stored request is already successful.
 
-```mermaid
-erDiagram
-    CONSUMER ||--o{ FINANCING_REQUEST : has
-    FINANCING_REQUEST ||--|| CREDIT_EXTRACT : produces
-    CONSUMER { uuid id PK; varchar personal_identity_code UK; timestamptz created_at }
-    FINANCING_REQUEST { uuid id PK; uuid consumer_id FK; uuid client_request_id UK; varchar_array extract_purposes; timestamptz requested_at; timestamptz completed_at }
-    CREDIT_EXTRACT { uuid id PK; uuid financing_request_id FK_UK; uuid extract_reference UK; timestamptz creation_time_utc; jsonb register_data; timestamptz persisted_at }
-```
+![Credit Lens data model](images/data-model.svg)
 
 ## `consumer`
 

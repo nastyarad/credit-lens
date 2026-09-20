@@ -19,14 +19,7 @@ request is successful because it has a stored extract.
 
 ## Components
 
-```mermaid
-flowchart LR
-    Controller --> Service
-    Service --> ConsumerRepository
-    Service --> FinancingRequestRepository
-    Service --> CreditExtractRepository
-    Service --> PositiveCreditRegisterClient
-```
+![Credit Lens backend components](images/components.svg)
 
 The controller validates `CreateFinancingRequestRequest`, calls
 `FinancingRequestService.create()` and returns
