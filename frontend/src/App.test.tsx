@@ -20,6 +20,15 @@ const responseBody = {
   },
 }
 
+function historyResponse(page = 0, totalPages = 1, items = [
+  {
+    id: 'history-id', clientRequestId: 'history-client-id', maskedPersonalIdentityCode: '******-123A',
+    requestedAt: '2026-09-18T10:15:29Z', completedAt: '2026-09-18T10:15:30Z', extractReference: 'history-extract', voluntaryCreditBanActive: true,
+  },
+]) {
+  return new Response(JSON.stringify({ items, page, size: 20, totalItems: items.length, totalPages }), { status: 200 })
+}
+
 function problemResponse(status: number) {
   return new Response(JSON.stringify({
     title: 'Client request ID conflict',
@@ -123,5 +132,50 @@ describe('financing request flow', () => {
 
     const payloads = fetchMock.mock.calls.map((call) => JSON.parse(call[1].body as string) as { clientRequestId: string })
     expect(payloads.map((payload) => payload.clientRequestId)).toEqual(['first-client-id', 'second-client-id'])
+  })
+
+  it('does not search when opening request history', async () => {
+    const user = userEvent.setup()
+    const fetchMock = vi.fn()
+    vi.stubGlobal('fetch', fetchMock)
+    render(<App />)
+    await user.click(screen.getByRole('button', { name: 'Request history' }))
+    expect(screen.getByRole('heading', { name: /find completed requests/i })).toBeInTheDocument()
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('validates and normalizes a history search request', async () => {
+    const user = userEvent.setup()
+    const fetchMock = vi.fn().mockResolvedValue(historyResponse())
+    vi.stubGlobal('fetch', fetchMock)
+    render(<App />)
+    await user.click(screen.getByRole('button', { name: 'Request history' }))
+    await user.click(screen.getByRole('button', { name: /search request history/i }))
+    expect(screen.getByText('Enter a Finnish personal identity code.')).toBeInTheDocument()
+    await user.type(screen.getByLabelText(/personal identity code/i), ' 010190-123a ')
+    await user.click(screen.getByRole('button', { name: /search request history/i }))
+    await screen.findByText('******-123A')
+    expect(fetchMock).toHaveBeenCalledWith('/api/v1/financing-requests/search', expect.objectContaining({
+      method: 'POST', body: JSON.stringify({ personalIdentityCode: '010190-123A', page: 0, size: 20 }),
+    }))
+    expect(screen.queryByText('010190-123A')).not.toBeInTheDocument()
+    expect(screen.getByText('Active')).toBeInTheDocument()
+  })
+
+  it('paginates history and keeps the previous list on a page error', async () => {
+    const user = userEvent.setup()
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(historyResponse(0, 2))
+      .mockResolvedValueOnce(problemResponse(503))
+    vi.stubGlobal('fetch', fetchMock)
+    render(<App />)
+    await user.click(screen.getByRole('button', { name: 'Request history' }))
+    await user.type(screen.getByLabelText(/personal identity code/i), '010190-123A')
+    await user.click(screen.getByRole('button', { name: /search request history/i }))
+    await screen.findByText('history-extract')
+    await user.click(screen.getByRole('button', { name: 'Next' }))
+    await screen.findByRole('alert')
+    expect(screen.getByText('history-extract')).toBeInTheDocument()
+    expect(JSON.parse(fetchMock.mock.calls[1][1].body as string)).toEqual({ personalIdentityCode: '010190-123A', page: 1, size: 20 })
   })
 })

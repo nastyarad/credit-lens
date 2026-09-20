@@ -18,6 +18,30 @@ export interface CreateFinancingRequestPayload {
   creditRegisterExtractPurposes: CreditRegisterExtractPurpose[]
 }
 
+export interface FinancingRequestSearchPayload {
+  personalIdentityCode: string
+  page: number
+  size: number
+}
+
+export interface FinancingRequestHistoryItem {
+  id: string
+  clientRequestId: string
+  maskedPersonalIdentityCode: string
+  requestedAt: string
+  completedAt: string
+  extractReference: string
+  voluntaryCreditBanActive: boolean
+}
+
+export interface FinancingRequestHistoryPage {
+  items: FinancingRequestHistoryItem[]
+  page: number
+  size: number
+  totalItems: number
+  totalPages: number
+}
+
 export interface ApiProblem {
   type?: string
   title?: string
