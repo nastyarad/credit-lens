@@ -12,7 +12,7 @@ import static org.mockito.Mockito.when;
 import com.creditlens.backend.api.dto.CreateFinancingRequestRequest;
 import com.creditlens.backend.api.dto.CreateFinancingRequestResponse;
 import com.creditlens.backend.api.dto.CreditRegisterExtractPurposeDto;
-import com.creditlens.backend.api.dto.FinancingRequestSearchRequestDto;
+import com.creditlens.backend.api.dto.SearchFinancingRequestRequest;
 import com.creditlens.backend.domain.Consumer;
 import com.creditlens.backend.domain.CreditExtract;
 import com.creditlens.backend.domain.CreditInformationSummary;
@@ -275,7 +275,7 @@ class FinancingRequestServiceTest {
             new PageImpl<>(List.of(item), org.springframework.data.domain.PageRequest.of(1, 2), 3));
 
     var result =
-        service.searchHistory(new FinancingRequestSearchRequestDto(PERSONAL_IDENTITY_CODE, 1, 2));
+        service.searchHistory(new SearchFinancingRequestRequest(PERSONAL_IDENTITY_CODE, 1, 2));
 
     assertThat(result.items()).hasSize(1);
     assertThat(result.items().getFirst().maskedPersonalIdentityCode()).isEqualTo("******-123A");

@@ -1,15 +1,11 @@
 package com.creditlens.backend.service;
 
-import com.creditlens.backend.api.dto.ConsumerDto;
 import com.creditlens.backend.api.dto.CreateFinancingRequestRequest;
 import com.creditlens.backend.api.dto.CreateFinancingRequestResponse;
-import com.creditlens.backend.api.dto.CreditExtractSummaryDto;
-import com.creditlens.backend.api.dto.CreditRegisterExtractPurposeDto;
 import com.creditlens.backend.api.dto.FinancingRequestHistoryItemDto;
-import com.creditlens.backend.api.dto.FinancingRequestSearchRequestDto;
-import com.creditlens.backend.api.dto.PageDto;
-import com.creditlens.backend.api.dto.VoluntaryBanOnCreditsDto;
-import com.creditlens.backend.api.dto.VoluntaryCreditBanReasonDto;
+import com.creditlens.backend.api.dto.SearchFinancingRequestRequest;
+import com.creditlens.backend.api.dto.SearchFinancingRequestResponse;
+import com.creditlens.backend.api.mapper.FinancingRequestResponseMapper;
 import com.creditlens.backend.domain.Consumer;
 import com.creditlens.backend.domain.CreditExtract;
 import com.creditlens.backend.domain.CreditRegisterExtractPurpose;
@@ -77,14 +73,11 @@ public class FinancingRequestService {
         positiveCreditRegisterClient.requestCreditExtract(personalIdentityCode, purposes);
     Instant completedAt = clock.instant();
     try {
-      return toResponse(
+      return FinancingRequestResponseMapper.toCreateResponse(
           saveNewRequest(
-              request.clientRequestId(),
-              personalIdentityCode,
-              purposes,
-              requestedAt,
-              completedAt,
-              extract),
+              new ValidatedFinancingRequestInput(
+                  request.clientRequestId(), personalIdentityCode, purposes),
+              new CompletedPcrCall(requestedAt, completedAt, extract)),
           true);
     } catch (DataIntegrityViolationException exception) {
       // A concurrent request can finish after the initial idempotency lookup.
@@ -97,26 +90,24 @@ public class FinancingRequestService {
   }
 
   private FinancingRequest saveNewRequest(
-      UUID clientRequestId,
-      PersonalIdentityCode personalIdentityCode,
-      List<CreditRegisterExtractPurpose> purposes,
-      Instant requestedAt,
-      Instant completedAt,
-      CreditExtract extract) {
+      ValidatedFinancingRequestInput input, CompletedPcrCall pcrCall) {
     return Objects.requireNonNull(
         transactions.execute(
             status -> {
-              ConsumerEntity consumer = findOrCreateConsumer(personalIdentityCode, requestedAt);
+              ConsumerEntity consumer =
+                  findOrCreateConsumer(input.personalIdentityCode(), pcrCall.requestedAt());
               CreditExtract persistedExtract =
-                  extract.withPersistenceMetadata(extract.id(), completedAt);
+                  pcrCall
+                      .creditExtract()
+                      .withPersistenceMetadata(pcrCall.creditExtract().id(), pcrCall.completedAt());
               FinancingRequest financingRequest =
                   FinancingRequest.create(
                       UUID.randomUUID(),
-                      clientRequestId,
+                      input.clientRequestId(),
                       consumer.toDomain(),
-                      purposes,
-                      requestedAt,
-                      completedAt,
+                      input.purposes(),
+                      pcrCall.requestedAt(),
+                      pcrCall.completedAt(),
                       persistedExtract);
               FinancingRequestEntity requestEntity =
                   financingRequestRepository.save(
@@ -138,14 +129,13 @@ public class FinancingRequestService {
                         new Consumer(UUID.randomUUID(), personalIdentityCode, requestedAt))));
   }
 
-  public PageDto<FinancingRequestHistoryItemDto> searchHistory(
-      FinancingRequestSearchRequestDto request) {
+  public SearchFinancingRequestResponse searchHistory(SearchFinancingRequestRequest request) {
     PersonalIdentityCode personalIdentityCode =
         PersonalIdentityCode.of(request.personalIdentityCode());
     Page<FinancingRequestHistoryProjection> history =
         financingRequestRepository.findHistoryByPersonalIdentityCode(
             personalIdentityCode.value(), PageRequest.of(request.page(), request.size()));
-    return new PageDto<>(
+    return new SearchFinancingRequestResponse(
         history.getContent().stream().map(this::toHistoryItem).toList(),
         history.getNumber(),
         history.getSize(),
@@ -172,7 +162,7 @@ public class FinancingRequestService {
     if (!saved.hasSameInput(personalIdentityCode, purposes)) {
       throw new ClientRequestConflictException();
     }
-    return toResponse(saved, false);
+    return FinancingRequestResponseMapper.toCreateResponse(saved, false);
   }
 
   private FinancingRequest getFinancingRequest(FinancingRequestEntity entity) {
@@ -185,31 +175,11 @@ public class FinancingRequestService {
     return entity.toDomain(extract);
   }
 
-  private CreateFinancingRequestResponse toResponse(
-      FinancingRequest request, boolean newlyCreated) {
-    CreditExtract extract = request.creditExtract();
-    return new CreateFinancingRequestResponse(
-        request.id(),
-        request.clientRequestId(),
-        new ConsumerDto(
-            request.consumer().id(), request.consumer().personalIdentityCode().masked()),
-        request.extractPurposes().stream()
-            .map(p -> CreditRegisterExtractPurposeDto.valueOf(p.name()))
-            .toList(),
-        request.requestedAt(),
-        request.completedAt(),
-        new CreditExtractSummaryDto(
-            extract.extractReference(),
-            extract.creationTimeUtc(),
-            new VoluntaryBanOnCreditsDto(
-                extract.voluntaryBanOnCredits().isInEffect(),
-                extract.voluntaryBanOnCredits().reason() == null
-                    ? null
-                    : VoluntaryCreditBanReasonDto.valueOf(
-                        extract.voluntaryBanOnCredits().reason().name())),
-            extract.creditInformationSummary().lendersCount(),
-            extract.creditInformationSummary().loanContractsCount(),
-            extract.creditInformationSummary().guaranteedLoanContractsCount()),
-        newlyCreated);
-  }
+  private record ValidatedFinancingRequestInput(
+      UUID clientRequestId,
+      PersonalIdentityCode personalIdentityCode,
+      List<CreditRegisterExtractPurpose> purposes) {}
+
+  private record CompletedPcrCall(
+      Instant requestedAt, Instant completedAt, CreditExtract creditExtract) {}
 }

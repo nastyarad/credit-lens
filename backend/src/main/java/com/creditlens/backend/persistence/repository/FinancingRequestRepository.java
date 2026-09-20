@@ -14,6 +14,11 @@ public interface FinancingRequestRepository extends JpaRepository<FinancingReque
   @EntityGraph(attributePaths = "consumer")
   Optional<FinancingRequestEntity> findByClientRequestId(UUID clientRequestId);
 
+  // Keep this query next to the repository method while it is small, static, used once, and
+  // covered by integration tests: the SQL and its projection contract remain easy to discover.
+  // In production, prefer a custom repository with JdbcClient or jOOQ when queries require dynamic
+  // composition or type-safe reuse, and external named SQL when large queries need independent
+  // ownership, tuning, or versioning.
   @Query(
       value =
           """
