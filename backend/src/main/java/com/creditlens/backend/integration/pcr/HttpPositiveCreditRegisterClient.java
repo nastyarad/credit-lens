@@ -24,7 +24,7 @@ public class HttpPositiveCreditRegisterClient implements PositiveCreditRegisterC
   public HttpPositiveCreditRegisterClient(RestClient.Builder builder, PcrProperties properties) {
     this.restClient =
         builder.baseUrl(properties.baseUrl()).requestFactory(requestFactory(properties)).build();
-    this.objectMapper = JsonMapper.builder().build();
+    this.objectMapper = JsonMapper.builder().findAndAddModules().build();
     this.properties = properties;
   }
 

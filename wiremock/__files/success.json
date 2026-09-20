@@ -1,8 +1,8 @@
 {
   "creditRegisterExtract": {
-    "extractReference": "2fdc1e0b-91d8-4d7c-9d4c-82df9c3b2a10",
+    "extractReference": "{{randomValue type='UUID'}}",
     "creationTimeUtc": "2026-09-18T10:15:30Z",
-    "personRequested": {"idCode": "010190-123A"},
+    "personRequested": {"idCode": "{{jsonPath request.body '$.idCode'}}"},
     "creditInformationSummary": {"lendersCount": 2, "loanContractsCount": 1, "guaranteedLoanContractsCount": 0},
     "repaymentsPaidLastAmount": [{"currencyCode": "EUR", "sum": 125.50}],
     "sumOfMonthlyLeasingInstalments": [{"currencyCode": "EUR", "sum": 250.00}],
