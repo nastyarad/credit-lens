@@ -90,6 +90,18 @@ returns an empty page. Only requests with an associated `credit_extract` are
 included. The response contains masked identity data and no status or error
 fields.
 
+`GET /api/v1/financing-requests/{id}` returns the complete details of one successfully
+saved financing request, including its one immutable credit extract. The
+endpoint never calls PCR and returns no status, error, newlyCreated or full
+personal identity code.
+
+For an existing request it returns `200 OK` with the request fields and the
+complete `creditExtract`, including summary amounts, loans and income data. A
+malformed UUID returns `400 Bad Request`; an unknown UUID returns `404 Not
+Found`. Both errors use `application/problem+json` and a correlation ID in the
+response header and body. A missing extract for an existing request is an
+internal invariant violation, not a not-found response.
+
 ## Monitoring
 
 `GET /monitoring/financing-requests?completedFrom=...&completedTo=...`
