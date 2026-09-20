@@ -13,7 +13,7 @@ import com.creditlens.backend.api.dto.CreateFinancingRequestResponse;
 import com.creditlens.backend.api.dto.CreditExtractSummaryDto;
 import com.creditlens.backend.api.dto.CreditRegisterExtractPurposeDto;
 import com.creditlens.backend.api.dto.FinancingRequestHistoryItemDto;
-import com.creditlens.backend.api.dto.PageDto;
+import com.creditlens.backend.api.dto.SearchFinancingRequestResponse;
 import com.creditlens.backend.api.dto.VoluntaryBanOnCreditsDto;
 import com.creditlens.backend.integration.pcr.PositiveCreditRegisterException;
 import com.creditlens.backend.service.ClientRequestConflictException;
@@ -149,7 +149,7 @@ class FinancingRequestControllerTest {
   void searchesHistoryWithValidatedRequestAndPageMetadata() throws Exception {
     when(financingRequestService.searchHistory(any()))
         .thenReturn(
-            new PageDto<>(
+            new SearchFinancingRequestResponse(
                 List.of(
                     new FinancingRequestHistoryItemDto(
                         REQUEST_ID,

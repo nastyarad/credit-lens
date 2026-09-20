@@ -5,7 +5,7 @@ import {
   type CreditRegisterExtractPurpose,
 } from '../api/types'
 import { purposeLabels } from './purposeLabels'
-const PERSONAL_IDENTITY_CODE_PATTERN = /^[0-9]{6}[+\-A-FYXWVU][0-9]{3}[0-9A-FHJ-NPR-Y]$/
+import { normalizePersonalIdentityCode, validatePersonalIdentityCode } from '../identityCode'
 
 interface FinancingRequestFormProps {
   disabled: boolean
@@ -22,13 +22,10 @@ export function FinancingRequestForm({ disabled, onSubmit }: FinancingRequestFor
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    const trimmedCode = personalIdentityCode.trim().toUpperCase()
-    if (!trimmedCode) {
-      setValidationError('Enter a Finnish personal identity code.')
-      return
-    }
-    if (!PERSONAL_IDENTITY_CODE_PATTERN.test(trimmedCode)) {
-      setValidationError('Enter a valid Finnish personal identity code.')
+    const trimmedCode = normalizePersonalIdentityCode(personalIdentityCode)
+    const error = validatePersonalIdentityCode(trimmedCode)
+    if (error) {
+      setValidationError(error)
       return
     }
     setValidationError('')

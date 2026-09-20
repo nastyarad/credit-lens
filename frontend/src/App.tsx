@@ -7,11 +7,13 @@ import {
 import type { CreditRegisterExtractPurpose, FinancingRequestResponse } from './api/types'
 import { FinancingRequestForm } from './components/FinancingRequestForm'
 import { FinancingRequestResult } from './components/FinancingRequestResult'
+import { FinancingRequestHistory } from './components/FinancingRequestHistory'
 import './App.css'
 
 type RequestState = 'idle' | 'submitting' | 'completed' | 'api-error' | 'network-error'
 
 function App() {
+  const [section, setSection] = useState<'new' | 'history'>('new')
   const [state, setState] = useState<RequestState>('idle')
   const [result, setResult] = useState<FinancingRequestResponse | null>(null)
   const [error, setError] = useState<{ title: string; detail: string; reference?: string } | null>(null)
@@ -78,13 +80,18 @@ function App() {
         </a>
         <span className="status-badge">Positive Credit Register</span>
       </header>
+      <nav className="main-navigation" aria-label="Main navigation">
+        <button className={section === 'new' ? 'nav-link active' : 'nav-link'} type="button" aria-current={section === 'new' ? 'page' : undefined} onClick={() => setSection('new')}>New request</button>
+        <button className={section === 'history' ? 'nav-link active' : 'nav-link'} type="button" aria-current={section === 'history' ? 'page' : undefined} onClick={() => setSection('history')}>Request history</button>
+      </nav>
       <main>
         <section className="hero" aria-labelledby="page-title">
           <p className="eyebrow">Financing request</p>
           <h1 id="page-title">A clearer view of every credit decision.</h1>
           <p className="hero-copy">Request a Finnish credit register extract securely and get the information you need for a financing decision.</p>
         </section>
-        <section className="workspace" aria-labelledby="request-title">
+        <section className="workspace" aria-labelledby={section === 'new' ? 'request-title' : 'history-title'}>
+          {section === 'history' ? <FinancingRequestHistory /> : <>
           {state !== 'completed' && (
             <div className="request-panel">
               <div className="section-heading">
@@ -112,6 +119,7 @@ function App() {
             </div>
           )}
           {result && state === 'completed' && <FinancingRequestResult result={result} onCreateAnother={createAnotherRequest} />}
+          </>}
         </section>
       </main>
       <footer>

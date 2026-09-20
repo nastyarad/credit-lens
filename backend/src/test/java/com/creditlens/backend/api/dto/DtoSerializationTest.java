@@ -55,7 +55,7 @@ class DtoSerializationTest {
   }
 
   @Test
-  void historyAndDetailsContainOnlySuccessfulFetches() {
+  void historyContainsOnlySuccessfulFetches() {
     FinancingRequestHistoryItemDto history =
         new FinancingRequestHistoryItemDto(
             UUID.randomUUID(),
@@ -65,22 +65,6 @@ class DtoSerializationTest {
             Instant.EPOCH,
             UUID.randomUUID(),
             false);
-    FinancingRequestDetailsDto details =
-        new FinancingRequestDetailsDto(
-            history.id(),
-            history.clientRequestId(),
-            new ConsumerDto(UUID.randomUUID(), "******-123A"),
-            List.of(CreditRegisterExtractPurposeDto.NewConsumerCredit),
-            Instant.EPOCH,
-            Instant.EPOCH,
-            new CreditExtractDto(
-                UUID.randomUUID(),
-                Instant.EPOCH,
-                new VoluntaryBanOnCreditsDto(false, null),
-                new CreditInformationSummaryDto(0, 0, 0, List.of(), List.of()),
-                List.of(),
-                List.of()));
     assertThat(history.completedAt()).isEqualTo(Instant.EPOCH);
-    assertThat(details.creditExtract()).isNotNull();
   }
 }

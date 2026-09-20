@@ -28,8 +28,8 @@ class DtoValidationTest {
             UUID.randomUUID(),
             personalIdentityCode,
             List.of(CreditRegisterExtractPurposeDto.NewConsumerCredit));
-    FinancingRequestSearchRequestDto search =
-        new FinancingRequestSearchRequestDto(personalIdentityCode, 0, 20);
+    SearchFinancingRequestRequest search =
+        new SearchFinancingRequestRequest(personalIdentityCode, 0, 20);
     assertThat(request.toString())
         .contains("personalIdentityCode=<redacted>")
         .doesNotContain(personalIdentityCode);
