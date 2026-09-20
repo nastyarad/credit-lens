@@ -12,6 +12,8 @@ import com.creditlens.backend.api.dto.ConsumerDto;
 import com.creditlens.backend.api.dto.CreateFinancingRequestResponse;
 import com.creditlens.backend.api.dto.CreditExtractSummaryDto;
 import com.creditlens.backend.api.dto.CreditRegisterExtractPurposeDto;
+import com.creditlens.backend.api.dto.FinancingRequestHistoryItemDto;
+import com.creditlens.backend.api.dto.PageDto;
 import com.creditlens.backend.api.dto.VoluntaryBanOnCreditsDto;
 import com.creditlens.backend.service.ClientRequestConflictException;
 import com.creditlens.backend.service.FinancingRequestService;
@@ -111,6 +113,68 @@ class FinancingRequestControllerTest {
         .andExpect(jsonPath("$.status").value(409))
         .andExpect(jsonPath("$.title").value("Client request ID conflict"))
         .andExpect(jsonPath("$.instance").value("/api/v1/financing-requests"));
+  }
+
+  @Test
+  void searchesHistoryWithValidatedRequestAndPageMetadata() throws Exception {
+    when(financingRequestService.searchHistory(any()))
+        .thenReturn(
+            new PageDto<>(
+                List.of(
+                    new FinancingRequestHistoryItemDto(
+                        REQUEST_ID,
+                        CLIENT_REQUEST_ID,
+                        "******-123A",
+                        Instant.parse("2026-09-19T10:15:29Z"),
+                        Instant.parse("2026-09-19T10:15:30Z"),
+                        UUID.fromString("55555555-5555-5555-5555-555555555555"),
+                        true)),
+                0,
+                20,
+                1,
+                1));
+
+    mockMvc
+        .perform(
+            post("/api/v1/financing-requests/search")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"personalIdentityCode\":\"010190-123A\"}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.items[0].maskedPersonalIdentityCode").value("******-123A"))
+        .andExpect(jsonPath("$.items[0].voluntaryCreditBanActive").value(true))
+        .andExpect(jsonPath("$.page").value(0))
+        .andExpect(jsonPath("$.size").value(20))
+        .andExpect(jsonPath("$.totalItems").value(1))
+        .andExpect(jsonPath("$.totalPages").value(1))
+        .andExpect(jsonPath("$..personalIdentityCode").isEmpty());
+
+    verify(financingRequestService).searchHistory(any());
+  }
+
+  @Test
+  void rejectsInvalidHistorySearchBeforeCallingService() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/v1/financing-requests/search")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"personalIdentityCode\":\"010190-123A\",\"page\":-1}"))
+        .andExpect(status().isBadRequest());
+
+    mockMvc
+        .perform(
+            post("/api/v1/financing-requests/search")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"personalIdentityCode\":\"invalid\",\"size\":101}"))
+        .andExpect(status().isBadRequest());
+
+    mockMvc
+        .perform(
+            post("/api/v1/financing-requests/search")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"personalIdentityCode\":\"010190-123A\",\"size\":0}"))
+        .andExpect(status().isBadRequest());
+
+    verify(financingRequestService, org.mockito.Mockito.never()).searchHistory(any());
   }
 
   private String validRequestJson() {

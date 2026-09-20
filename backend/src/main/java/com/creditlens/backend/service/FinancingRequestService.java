@@ -5,6 +5,9 @@ import com.creditlens.backend.api.dto.CreateFinancingRequestRequest;
 import com.creditlens.backend.api.dto.CreateFinancingRequestResponse;
 import com.creditlens.backend.api.dto.CreditExtractSummaryDto;
 import com.creditlens.backend.api.dto.CreditRegisterExtractPurposeDto;
+import com.creditlens.backend.api.dto.FinancingRequestHistoryItemDto;
+import com.creditlens.backend.api.dto.FinancingRequestSearchRequestDto;
+import com.creditlens.backend.api.dto.PageDto;
 import com.creditlens.backend.api.dto.VoluntaryBanOnCreditsDto;
 import com.creditlens.backend.api.dto.VoluntaryCreditBanReasonDto;
 import com.creditlens.backend.domain.Consumer;
@@ -18,12 +21,15 @@ import com.creditlens.backend.persistence.entity.CreditExtractEntity;
 import com.creditlens.backend.persistence.entity.FinancingRequestEntity;
 import com.creditlens.backend.persistence.repository.ConsumerRepository;
 import com.creditlens.backend.persistence.repository.CreditExtractRepository;
+import com.creditlens.backend.persistence.repository.FinancingRequestHistoryProjection;
 import com.creditlens.backend.persistence.repository.FinancingRequestRepository;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -107,6 +113,32 @@ public class FinancingRequestService {
                   return financingRequest;
                 }));
     return toResponse(saved, true);
+  }
+
+  public PageDto<FinancingRequestHistoryItemDto> searchHistory(
+      FinancingRequestSearchRequestDto request) {
+    PersonalIdentityCode personalIdentityCode =
+        PersonalIdentityCode.of(request.personalIdentityCode());
+    Page<FinancingRequestHistoryProjection> history =
+        financingRequestRepository.findHistoryByPersonalIdentityCode(
+            personalIdentityCode.value(), PageRequest.of(request.page(), request.size()));
+    return new PageDto<>(
+        history.getContent().stream().map(this::toHistoryItem).toList(),
+        history.getNumber(),
+        history.getSize(),
+        history.getTotalElements(),
+        history.getTotalPages());
+  }
+
+  private FinancingRequestHistoryItemDto toHistoryItem(FinancingRequestHistoryProjection item) {
+    return new FinancingRequestHistoryItemDto(
+        item.getId(),
+        item.getClientRequestId(),
+        PersonalIdentityCode.of(item.getPersonalIdentityCode()).masked(),
+        item.getRequestedAt(),
+        item.getCompletedAt(),
+        item.getExtractReference(),
+        item.isVoluntaryCreditBanActive());
   }
 
   private FinancingRequest getFinancingRequest(FinancingRequestEntity entity) {

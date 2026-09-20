@@ -75,6 +75,20 @@ models contain `requestedAt`, `completedAt`, masked identity data and the
 immutable extract; they do not contain status or error fields. An extract's
 presence is the success indicator.
 
+`POST /financing-requests/search` searches history by a
+`personalIdentityCode` supplied only in the request body:
+
+```json
+{"personalIdentityCode":"010190-123A","page":0,"size":20}
+```
+
+`page` defaults to `0`; `size` defaults to `20` and accepts values from `1`
+through `100`. The response is a `PageDto` with history items, ordered by
+`requestedAt DESC, id DESC` and paginated by the database. An unknown consumer
+returns an empty page. Only requests with an associated `credit_extract` are
+included. The response contains masked identity data and no status or error
+fields.
+
 ## Monitoring
 
 `GET /monitoring/financing-requests?completedFrom=...&completedTo=...`

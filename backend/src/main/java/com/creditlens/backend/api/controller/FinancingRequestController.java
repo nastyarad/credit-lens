@@ -2,6 +2,9 @@ package com.creditlens.backend.api.controller;
 
 import com.creditlens.backend.api.dto.CreateFinancingRequestRequest;
 import com.creditlens.backend.api.dto.CreateFinancingRequestResponse;
+import com.creditlens.backend.api.dto.FinancingRequestHistoryItemDto;
+import com.creditlens.backend.api.dto.FinancingRequestSearchRequestDto;
+import com.creditlens.backend.api.dto.PageDto;
 import com.creditlens.backend.service.FinancingRequestService;
 import jakarta.validation.Valid;
 import java.net.URI;
@@ -31,5 +34,11 @@ public class FinancingRequestController {
 
     URI location = URI.create("/api/v1/financing-requests/" + response.id());
     return ResponseEntity.created(location).body(response);
+  }
+
+  @PostMapping("/search")
+  public ResponseEntity<PageDto<FinancingRequestHistoryItemDto>> search(
+      @Valid @RequestBody FinancingRequestSearchRequestDto request) {
+    return ResponseEntity.ok(financingRequestService.searchHistory(request));
   }
 }
