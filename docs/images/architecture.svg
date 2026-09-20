@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="360" viewBox="0 0 980 360">
+  <style>text{font:16px Arial,sans-serif;fill:#172033} .box{fill:#eef4ff;stroke:#4169a1;stroke-width:2} .db{fill:#f4f0ff;stroke:#7356a8;stroke-width:2} .line{stroke:#425466;stroke-width:2;fill:none;marker-end:url(#arrow)} .label{font-size:14px;fill:#425466}</style>
+  <defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L9,3 L0,6 z" fill="#425466"/></marker></defs>
+  <rect class="box" x="30" y="145" width="130" height="52" rx="8"/><text x="95" y="177" text-anchor="middle">User</text>
+  <rect class="box" x="220" y="145" width="170" height="52" rx="8"/><text x="305" y="177" text-anchor="middle">React frontend</text>
+  <rect class="box" x="480" y="145" width="150" height="52" rx="8"/><text x="555" y="177" text-anchor="middle">Java backend</text>
+  <rect class="db" x="720" y="55" width="190" height="52" rx="8"/><text x="815" y="87" text-anchor="middle">Backend PostgreSQL</text>
+  <rect class="box" x="720" y="145" width="190" height="52" rx="8"/><text x="815" y="177" text-anchor="middle">PCR mock</text>
+  <rect class="box" x="220" y="275" width="190" height="52" rx="8"/><text x="315" y="307" text-anchor="middle">Monitoring service</text>
+  <rect class="db" x="480" y="275" width="190" height="52" rx="8"/><text x="575" y="307" text-anchor="middle">Monitoring PostgreSQL</text>
+  <rect class="box" x="740" y="275" width="150" height="52" rx="8"/><text x="815" y="307" text-anchor="middle">Email / SMTP</text>
+  <path class="line" d="M160 171 H220"/><path class="line" d="M390 171 H480"/>
+  <path class="line" d="M630 158 H720"/><text class="label" x="670" y="150" text-anchor="middle">credit extract</text>
+  <path class="line" d="M590 145 V107 H720"/><path class="line" d="M315 275 V225 H555 V197"/>
+  <text class="label" x="440" y="218" text-anchor="middle">monitoring API</text>
+  <path class="line" d="M410 301 H480"/><path class="line" d="M670 301 H740"/>
+</svg>
