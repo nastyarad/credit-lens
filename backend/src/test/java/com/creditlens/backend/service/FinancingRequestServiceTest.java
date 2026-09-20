@@ -12,6 +12,7 @@ import static org.mockito.Mockito.when;
 import com.creditlens.backend.api.dto.CreateFinancingRequestRequest;
 import com.creditlens.backend.api.dto.CreateFinancingRequestResponse;
 import com.creditlens.backend.api.dto.CreditRegisterExtractPurposeDto;
+import com.creditlens.backend.api.dto.FinancingRequestSearchRequestDto;
 import com.creditlens.backend.domain.Consumer;
 import com.creditlens.backend.domain.CreditExtract;
 import com.creditlens.backend.domain.CreditInformationSummary;
@@ -25,6 +26,7 @@ import com.creditlens.backend.persistence.entity.CreditExtractEntity;
 import com.creditlens.backend.persistence.entity.FinancingRequestEntity;
 import com.creditlens.backend.persistence.repository.ConsumerRepository;
 import com.creditlens.backend.persistence.repository.CreditExtractRepository;
+import com.creditlens.backend.persistence.repository.FinancingRequestHistoryProjection;
 import com.creditlens.backend.persistence.repository.FinancingRequestRepository;
 import java.time.Clock;
 import java.time.Instant;
@@ -38,6 +40,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 
@@ -204,6 +207,58 @@ class FinancingRequestServiceTest {
         .isInstanceOf(ClientRequestConflictException.class);
     verify(positiveCreditRegisterClient, never()).requestCreditExtract(any(), any());
     verify(financingRequestRepository, never()).save(any());
+  }
+
+  @Test
+  void searchesHistoryWithDatabasePaginationAndMasksIdentityCodeWithoutCallingPcr() {
+    FinancingRequestHistoryProjection item =
+        new FinancingRequestHistoryProjection() {
+          public UUID getId() {
+            return REQUEST_ID;
+          }
+
+          public UUID getClientRequestId() {
+            return CLIENT_REQUEST_ID;
+          }
+
+          public String getPersonalIdentityCode() {
+            return PERSONAL_IDENTITY_CODE;
+          }
+
+          public Instant getRequestedAt() {
+            return REQUESTED_AT;
+          }
+
+          public Instant getCompletedAt() {
+            return COMPLETED_AT;
+          }
+
+          public UUID getExtractReference() {
+            return EXTRACT_REFERENCE;
+          }
+
+          public boolean isVoluntaryCreditBanActive() {
+            return true;
+          }
+        };
+    when(financingRequestRepository.findHistoryByPersonalIdentityCode(any(), any()))
+        .thenReturn(
+            new PageImpl<>(List.of(item), org.springframework.data.domain.PageRequest.of(1, 2), 3));
+
+    var result =
+        service.searchHistory(new FinancingRequestSearchRequestDto(PERSONAL_IDENTITY_CODE, 1, 2));
+
+    assertThat(result.items()).hasSize(1);
+    assertThat(result.items().getFirst().maskedPersonalIdentityCode()).isEqualTo("******-123A");
+    assertThat(result.items().getFirst().voluntaryCreditBanActive()).isTrue();
+    assertThat(result.page()).isEqualTo(1);
+    assertThat(result.size()).isEqualTo(2);
+    assertThat(result.totalItems()).isEqualTo(3);
+    assertThat(result.totalPages()).isEqualTo(2);
+    verify(financingRequestRepository)
+        .findHistoryByPersonalIdentityCode(
+            PERSONAL_IDENTITY_CODE, org.springframework.data.domain.PageRequest.of(1, 2));
+    verify(positiveCreditRegisterClient, never()).requestCreditExtract(any(), any());
   }
 
   private void stubNewRequest() {
