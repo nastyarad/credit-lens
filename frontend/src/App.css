@@ -47,4 +47,4 @@ dd { margin: 6px 0 0; color: var(--ink); line-height: 1.4; overflow-wrap: anywhe
 .purpose-summary { margin: 22px 0 28px; }
 .purpose-summary dd { margin-bottom: 0; }
 footer { min-height: 80px; border-top: 1px solid var(--border); color: var(--muted); font-size: 13px; }
-@media (max-width: 640px) { .site-header, footer, .hero, .workspace { width: min(100% - 32px, 1120px); } .site-header { min-height: 72px; } .status-badge { display: none; } .hero { padding: 64px 0 48px; } .request-panel, .result-card { padding: 24px 20px; border-radius: 18px; } .section-heading, .result-heading { display: block; } .step-label, .completed-badge { display: inline-block; margin-top: 16px; } .result-grid { grid-template-columns: 1fr; } }
+@media (max-width: 640px) { .site-header, footer, .hero, .workspace { width: min(100% - 32px, 1120px); } .site-header { min-height: 72px; } .status-badge { display: none; } .hero { padding: 64px 0 48px; } .request-panel, .result-card { padding: 24px 20px; border-radius: 18px; } .section-heading, .result-heading { display: block; } .step-label { display: inline-block; margin-top: 16px; } .result-grid { grid-template-columns: 1fr; } }

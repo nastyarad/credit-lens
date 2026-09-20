@@ -13,7 +13,6 @@ function formatDate(value: string) {
 export function FinancingRequestResult({ result, onCreateAnother }: FinancingRequestResultProps) {
   const summary = result.creditExtractSummary
   const banLabel = summary.voluntaryBanOnCredits.isInEffect ? 'Active' : 'Not active'
-  const status = result.status || 'COMPLETED'
 
   return (
     <section className="result-card" aria-labelledby="result-title">
@@ -22,10 +21,8 @@ export function FinancingRequestResult({ result, onCreateAnother }: FinancingReq
           <p className="eyebrow">Request completed</p>
           <h2 id="result-title">Credit extract is ready</h2>
         </div>
-        <span className="completed-badge">{status}</span>
       </div>
       <dl className="result-grid">
-        <div><dt>Status</dt><dd>{status}</dd></div>
         <div><dt>Identity code</dt><dd>{result.consumer.maskedPersonalIdentityCode}</dd></div>
         <div><dt>Requested</dt><dd>{formatDate(result.requestedAt)}</dd></div>
         <div><dt>Completed</dt><dd>{formatDate(result.completedAt)}</dd></div>

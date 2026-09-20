@@ -28,6 +28,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -68,51 +69,73 @@ public class FinancingRequestService {
 
     var existing = financingRequestRepository.findByClientRequestId(request.clientRequestId());
     if (existing.isPresent()) {
-      FinancingRequest saved = getFinancingRequest(existing.orElseThrow());
-      if (!saved.hasSameInput(personalIdentityCode, purposes)) {
-        throw new ClientRequestConflictException();
-      }
-      return toResponse(saved, false);
+      return existingResponse(existing.orElseThrow(), personalIdentityCode, purposes);
     }
 
     Instant requestedAt = clock.instant();
     CreditExtract extract =
         positiveCreditRegisterClient.requestCreditExtract(personalIdentityCode, purposes);
     Instant completedAt = clock.instant();
-    FinancingRequest saved =
-        Objects.requireNonNull(
-            transactions.execute(
-                status -> {
-                  ConsumerEntity consumerEntity =
-                      consumerRepository
-                          .findByPersonalIdentityCode(personalIdentityCode.value())
-                          .orElseGet(
-                              () ->
-                                  consumerRepository.save(
-                                      new ConsumerEntity(
-                                          new Consumer(
-                                              UUID.randomUUID(),
-                                              personalIdentityCode,
-                                              requestedAt))));
-                  CreditExtract persistedExtract =
-                      extract.withPersistenceMetadata(extract.id(), completedAt);
-                  FinancingRequest financingRequest =
-                      FinancingRequest.create(
-                          UUID.randomUUID(),
-                          request.clientRequestId(),
-                          consumerEntity.toDomain(),
-                          purposes,
-                          requestedAt,
-                          completedAt,
-                          persistedExtract);
-                  FinancingRequestEntity requestEntity =
-                      financingRequestRepository.save(
-                          new FinancingRequestEntity(financingRequest, consumerEntity));
-                  creditExtractRepository.save(
-                      new CreditExtractEntity(persistedExtract, requestEntity));
-                  return financingRequest;
-                }));
-    return toResponse(saved, true);
+    try {
+      return toResponse(
+          saveNewRequest(
+              request.clientRequestId(),
+              personalIdentityCode,
+              purposes,
+              requestedAt,
+              completedAt,
+              extract),
+          true);
+    } catch (DataIntegrityViolationException exception) {
+      // A concurrent request can finish after the initial idempotency lookup.
+      // Reuse its successful result when the clientRequestId constraint caused the race.
+      return financingRequestRepository
+          .findByClientRequestId(request.clientRequestId())
+          .map(entity -> existingResponse(entity, personalIdentityCode, purposes))
+          .orElseThrow(() -> exception);
+    }
+  }
+
+  private FinancingRequest saveNewRequest(
+      UUID clientRequestId,
+      PersonalIdentityCode personalIdentityCode,
+      List<CreditRegisterExtractPurpose> purposes,
+      Instant requestedAt,
+      Instant completedAt,
+      CreditExtract extract) {
+    return Objects.requireNonNull(
+        transactions.execute(
+            status -> {
+              ConsumerEntity consumer = findOrCreateConsumer(personalIdentityCode, requestedAt);
+              CreditExtract persistedExtract =
+                  extract.withPersistenceMetadata(extract.id(), completedAt);
+              FinancingRequest financingRequest =
+                  FinancingRequest.create(
+                      UUID.randomUUID(),
+                      clientRequestId,
+                      consumer.toDomain(),
+                      purposes,
+                      requestedAt,
+                      completedAt,
+                      persistedExtract);
+              FinancingRequestEntity requestEntity =
+                  financingRequestRepository.save(
+                      new FinancingRequestEntity(financingRequest, consumer));
+              creditExtractRepository.save(
+                  new CreditExtractEntity(persistedExtract, requestEntity));
+              return financingRequest;
+            }));
+  }
+
+  private ConsumerEntity findOrCreateConsumer(
+      PersonalIdentityCode personalIdentityCode, Instant requestedAt) {
+    return consumerRepository
+        .findByPersonalIdentityCode(personalIdentityCode.value())
+        .orElseGet(
+            () ->
+                consumerRepository.save(
+                    new ConsumerEntity(
+                        new Consumer(UUID.randomUUID(), personalIdentityCode, requestedAt))));
   }
 
   public PageDto<FinancingRequestHistoryItemDto> searchHistory(
@@ -139,6 +162,17 @@ public class FinancingRequestService {
         item.getCompletedAt(),
         item.getExtractReference(),
         item.isVoluntaryCreditBanActive());
+  }
+
+  private CreateFinancingRequestResponse existingResponse(
+      FinancingRequestEntity entity,
+      PersonalIdentityCode personalIdentityCode,
+      List<CreditRegisterExtractPurpose> purposes) {
+    FinancingRequest saved = getFinancingRequest(entity);
+    if (!saved.hasSameInput(personalIdentityCode, purposes)) {
+      throw new ClientRequestConflictException();
+    }
+    return toResponse(saved, false);
   }
 
   private FinancingRequest getFinancingRequest(FinancingRequestEntity entity) {

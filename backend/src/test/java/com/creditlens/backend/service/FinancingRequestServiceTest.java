@@ -40,6 +40,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
@@ -207,6 +208,34 @@ class FinancingRequestServiceTest {
         .isInstanceOf(ClientRequestConflictException.class);
     verify(positiveCreditRegisterClient, never()).requestCreditExtract(any(), any());
     verify(financingRequestRepository, never()).save(any());
+  }
+
+  @Test
+  void returnsRequestPersistedByConcurrentCallerAfterClientRequestIdConflict() {
+    FinancingRequestEntity existing =
+        existingEntity(List.of(CreditRegisterExtractPurpose.NewConsumerCredit));
+    ConsumerEntity consumer =
+        new ConsumerEntity(
+            new Consumer(
+                CONSUMER_ID, PersonalIdentityCode.of(PERSONAL_IDENTITY_CODE), REQUESTED_AT));
+    when(financingRequestRepository.findByClientRequestId(CLIENT_REQUEST_ID))
+        .thenReturn(Optional.empty())
+        .thenReturn(Optional.of(existing));
+    when(positiveCreditRegisterClient.requestCreditExtract(any(), any()))
+        .thenReturn(emptyExtract());
+    when(consumerRepository.findByPersonalIdentityCode(PERSONAL_IDENTITY_CODE))
+        .thenReturn(Optional.of(consumer));
+    when(financingRequestRepository.save(any()))
+        .thenThrow(new DataIntegrityViolationException("duplicate client request ID"));
+    when(creditExtractRepository.findByFinancingRequest_Id(REQUEST_ID))
+        .thenReturn(Optional.of(new CreditExtractEntity(emptyExtract(), existing)));
+
+    CreateFinancingRequestResponse response =
+        service.create(request(CreditRegisterExtractPurposeDto.NewConsumerCredit));
+
+    assertThat(response.id()).isEqualTo(REQUEST_ID);
+    assertThat(response.newlyCreated()).isFalse();
+    verify(positiveCreditRegisterClient).requestCreditExtract(any(), any());
   }
 
   @Test

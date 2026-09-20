@@ -12,8 +12,6 @@ export const CREDIT_REGISTER_EXTRACT_PURPOSES = [
 export type CreditRegisterExtractPurpose =
   (typeof CREDIT_REGISTER_EXTRACT_PURPOSES)[number]
 
-export type FinancingRequestStatus = 'COMPLETED' | string
-
 export interface CreateFinancingRequestPayload {
   clientRequestId: string
   personalIdentityCode: string
@@ -53,10 +51,7 @@ export interface FinancingRequestResponse {
   clientRequestId: string
   consumer: Consumer
   creditRegisterExtractPurposes: CreditRegisterExtractPurpose[]
-  status?: FinancingRequestStatus
   requestedAt: string
   completedAt: string
-  error?: ApiProblem | null
   creditExtractSummary: CreditExtractSummary
 }
-

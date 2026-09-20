@@ -15,6 +15,7 @@ import com.creditlens.backend.api.dto.CreditRegisterExtractPurposeDto;
 import com.creditlens.backend.api.dto.FinancingRequestHistoryItemDto;
 import com.creditlens.backend.api.dto.PageDto;
 import com.creditlens.backend.api.dto.VoluntaryBanOnCreditsDto;
+import com.creditlens.backend.integration.pcr.PositiveCreditRegisterException;
 import com.creditlens.backend.service.ClientRequestConflictException;
 import com.creditlens.backend.service.FinancingRequestService;
 import java.time.Instant;
@@ -84,16 +85,23 @@ class FinancingRequestControllerTest {
 
   @Test
   void rejectsInvalidRequestBeforeCallingService() throws Exception {
+    String correlationId = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
     mockMvc
         .perform(
             post("/api/v1/financing-requests")
+                .header("X-Correlation-Id", correlationId)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     """
                                 {"clientRequestId":"%s","personalIdentityCode":"invalid","creditRegisterExtractPurposes":[]}
                                 """
                         .formatted(CLIENT_REQUEST_ID)))
-        .andExpect(status().isBadRequest());
+        .andExpect(status().isBadRequest())
+        .andExpect(header().string("Content-Type", MediaType.APPLICATION_PROBLEM_JSON_VALUE))
+        .andExpect(header().string("X-Correlation-Id", correlationId))
+        .andExpect(jsonPath("$.correlationId").value(correlationId))
+        .andExpect(jsonPath("$.detail").value("The request could not be validated."))
+        .andExpect(jsonPath("$..personalIdentityCode").isEmpty());
   }
 
   @Test
@@ -113,6 +121,28 @@ class FinancingRequestControllerTest {
         .andExpect(jsonPath("$.status").value(409))
         .andExpect(jsonPath("$.title").value("Client request ID conflict"))
         .andExpect(jsonPath("$.instance").value("/api/v1/financing-requests"));
+  }
+
+  @Test
+  void includesCorrelationIdInPcrProblemResponseAndHeader() throws Exception {
+    String correlationId = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
+    when(financingRequestService.create(any()))
+        .thenThrow(
+            new PositiveCreditRegisterException(PositiveCreditRegisterException.Kind.TIMEOUT));
+
+    mockMvc
+        .perform(
+            post("/api/v1/financing-requests")
+                .header("X-Correlation-Id", correlationId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(validRequestJson()))
+        .andExpect(status().isGatewayTimeout())
+        .andExpect(header().string("Content-Type", MediaType.APPLICATION_PROBLEM_JSON_VALUE))
+        .andExpect(header().string("X-Correlation-Id", correlationId))
+        .andExpect(jsonPath("$.correlationId").value(correlationId))
+        .andExpect(
+            jsonPath("$.detail")
+                .value("The Positive Credit Register request could not be completed."));
   }
 
   @Test
