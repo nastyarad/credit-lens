@@ -11,6 +11,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -191,6 +192,59 @@ class BackendApplicationTests {
     assertThat(reloadedExtract.getLeasingInstalmentAmounts()).isEmpty();
     assertThat(reloadedExtract.getLoans()).isEmpty();
     assertThat(reloadedExtract.getIncomeData()).isEmpty();
+    verify(positiveCreditRegisterClient, times(1)).requestCreditExtract(any(), any());
+  }
+
+  @Test
+  void getsPersistedRequestDetailsWithCompleteExtractAndMaskedIdentityCode() throws Exception {
+    wireMock.stubFor(
+        com.github.tomakehurst.wiremock.client.WireMock.post(
+                urlEqualTo("/GetCreditRegisterExtract"))
+            .willReturn(
+                okJson(
+                    """
+                    {"creditRegisterExtract":{"extractReference":"55555555-5555-5555-5555-555555555555","creationTimeUtc":"2026-09-18T10:15:30Z","personRequested":{"idCode":"010190-123A"},"creditInformationSummary":{"lendersCount":2,"loanContractsCount":1,"guaranteedLoanContractsCount":0},"repaymentsPaidLastAmount":[{"currencyCode":"EUR","sum":125.50}],"sumOfMonthlyLeasingInstalments":[{"currencyCode":"EUR","sum":250.00}],"loans":[{"loanType":"LumpSumLoan","contractDate":"2025-01-15T00:00:00Z","isLoanWithCollateral":true,"collateralTypes":["ApartmentOrRealEstate"],"borrowersCount":1,"currencyCode":"EUR","paymentPlan":{"isInDebtArrangement":false,"isInBusinessRestructuringProgram":false},"accuracyIsDenied":false,"lumpSumLoan":{"amountIssued":10000,"amountPaid":1500,"balance":8500,"plannedFinalDueDate":"2030-01-15T00:00:00Z","amortizationFrequency":12},"delayedAmounts":[{"delayedInstalment":100,"originalDueDate":"2026-08-15T00:00:00Z"}],"isForeclosed":false}],"incomeData":[{"year":2026,"months":[{"month":8,"wagesGrossAmount":4000,"wagesNetAmount":3000,"benefitsGrossAmount":0,"benefitsNetAmount":0}]}]}}
+                    """)));
+
+    String location =
+        mockMvc
+            .perform(
+                post("/api/v1/financing-requests")
+                    .contentType("application/json")
+                    .content(createRequest(UUID.randomUUID(), "010190-123A", "NewConsumerCredit")))
+            .andExpect(status().isCreated())
+            .andReturn()
+            .getResponse()
+            .getHeader("Location");
+
+    String response =
+        mockMvc
+            .perform(get(location))
+            .andExpect(status().isOk())
+            .andExpect(content().contentTypeCompatibleWith("application/json"))
+            .andExpect(jsonPath("$.consumer.maskedPersonalIdentityCode").value("******-123A"))
+            .andExpect(
+                jsonPath("$.creditExtract.extractReference")
+                    .value("55555555-5555-5555-5555-555555555555"))
+            .andExpect(
+                jsonPath(
+                        "$.creditExtract.creditInformationSummary.repaymentsPaidLastAmount[0].currencyCode")
+                    .value("EUR"))
+            .andExpect(
+                jsonPath(
+                        "$.creditExtract.creditInformationSummary.sumOfMonthlyLeasingInstalments[0].sum")
+                    .value(250.0))
+            .andExpect(jsonPath("$.creditExtract.loans[0].loanType").value("LumpSumLoan"))
+            .andExpect(jsonPath("$.creditExtract.loans[0].lumpSumLoan.balance").value(8500))
+            .andExpect(
+                jsonPath("$.creditExtract.loans[0].delayedAmount[0].isForeclosed").value(false))
+            .andExpect(
+                jsonPath("$.creditExtract.incomeData[0].months[0].wagesNetAmount").value(3000))
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+
+    assertThat(response).doesNotContain("010190-123A");
     verify(positiveCreditRegisterClient, times(1)).requestCreditExtract(any(), any());
   }
 

@@ -3,6 +3,7 @@ package com.creditlens.backend.api.controller;
 import com.creditlens.backend.api.dto.ApiProblemDto;
 import com.creditlens.backend.integration.pcr.PositiveCreditRegisterException;
 import com.creditlens.backend.service.ClientRequestConflictException;
+import com.creditlens.backend.service.FinancingRequestNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import java.net.URI;
 import java.util.UUID;
@@ -12,11 +13,16 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 @RestControllerAdvice
 public class ApiExceptionHandler {
 
-  @ExceptionHandler({MethodArgumentNotValidException.class, HttpMessageNotReadableException.class})
+  @ExceptionHandler({
+    MethodArgumentNotValidException.class,
+    HttpMessageNotReadableException.class,
+    MethodArgumentTypeMismatchException.class
+  })
   public ResponseEntity<ApiProblemDto> handleInvalidRequest(
       Exception exception, HttpServletRequest request) {
     UUID correlationId = correlationId(request.getHeader("X-Correlation-Id"));
@@ -29,6 +35,24 @@ public class ApiExceptionHandler {
             URI.create(request.getRequestURI()),
             correlationId);
     return ResponseEntity.badRequest()
+        .contentType(MediaType.APPLICATION_PROBLEM_JSON)
+        .header("X-Correlation-Id", correlationId.toString())
+        .body(problem);
+  }
+
+  @ExceptionHandler(FinancingRequestNotFoundException.class)
+  public ResponseEntity<ApiProblemDto> handleFinancingRequestNotFound(
+      FinancingRequestNotFoundException exception, HttpServletRequest request) {
+    UUID correlationId = correlationId(request.getHeader("X-Correlation-Id"));
+    ApiProblemDto problem =
+        new ApiProblemDto(
+            URI.create("https://credit-lens.local/problems/financing-request-not-found"),
+            "Financing request not found",
+            404,
+            "The requested financing request was not found.",
+            URI.create(request.getRequestURI()),
+            correlationId);
+    return ResponseEntity.status(404)
         .contentType(MediaType.APPLICATION_PROBLEM_JSON)
         .header("X-Correlation-Id", correlationId.toString())
         .body(problem);
