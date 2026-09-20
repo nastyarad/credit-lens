@@ -104,11 +104,50 @@ internal invariant violation, not a not-found response.
 
 ## Monitoring
 
-`GET /monitoring/financing-requests?completedFrom=...&completedTo=...`
+`GET /api/v1/monitoring/financing-requests?completedFrom=...&completedTo=...&page=...&size=...`
 
-The interval is `[completedFrom, completedTo)`. Monitoring queries use
-`completed_at` and the existence of `credit_extract`; they do not filter by a
-financing-request status. Results remain ordered by `completedAt` and ID.
+The required `completedFrom` and `completedTo` parameters use ISO-8601
+timestamps compatible with `Instant`. `completedFrom` is inclusive and
+`completedTo` is exclusive, so the interval is `[completedFrom, completedTo)`.
+`page` is an optional zero-based page number defaulting to `0`. `size` is an
+optional page size defaulting to `100`, with allowed values from `1` through
+`500`.
+
+Results are sorted stably by `completedAt ASC, financingRequestId ASC` and
+have the following operation response shape:
+
+```json
+{
+  "items": [
+    {
+      "financingRequestId": "d46c2b84-d979-43e2-b0e4-bc7de12d2454",
+      "extractReference": "2fdc1e0b-91d8-4d7c-9d4c-82df9c3b2a10",
+      "requestedAt": "2026-09-18T10:04:40Z",
+      "completedAt": "2026-09-18T10:04:42Z",
+      "maskedPersonalIdentityCode": "******-123A",
+      "voluntaryCreditBanReason": "ControlOfPersonalFinances",
+      "lendersCount": 2,
+      "loanContractsCount": 3,
+      "guaranteedLoanContractsCount": 0
+    }
+  ],
+  "page": 0,
+  "size": 100,
+  "totalItems": 1,
+  "totalPages": 1
+}
+```
+
+When there are no matching requests, the endpoint returns `200 OK` with
+`items: []`, `totalItems: 0` and `totalPages: 0`. Requests with a missing or
+malformed timestamp, an empty or reversed interval, a negative page, or a size
+outside `1..500` return `400 Bad Request` as `application/problem+json` with a
+correlation ID in both the response header and body.
+
+Monitoring queries use `completed_at`, an inner join to the existing
+`credit_extract` table and `voluntary_ban_active = TRUE`; they do not filter by
+a financing-request status because no such status exists. The response only
+contains a masked personal identity code and never contains the full value.
 
 ## Sequence
 
