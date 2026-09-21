@@ -2,12 +2,16 @@ package com.creditlens.backend.api.controller;
 
 import com.creditlens.backend.api.dto.CreateFinancingRequestRequest;
 import com.creditlens.backend.api.dto.CreateFinancingRequestResponse;
+import com.creditlens.backend.api.dto.FinancingRequestDetailsDto;
 import com.creditlens.backend.api.dto.SearchFinancingRequestRequest;
 import com.creditlens.backend.api.dto.SearchFinancingRequestResponse;
 import com.creditlens.backend.service.FinancingRequestService;
 import jakarta.validation.Valid;
 import java.net.URI;
+import java.util.UUID;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -39,5 +43,10 @@ public class FinancingRequestController {
   public ResponseEntity<SearchFinancingRequestResponse> search(
       @Valid @RequestBody SearchFinancingRequestRequest request) {
     return ResponseEntity.ok(financingRequestService.searchHistory(request));
+  }
+
+  @GetMapping("/{id}")
+  public ResponseEntity<FinancingRequestDetailsDto> getDetails(@PathVariable UUID id) {
+    return ResponseEntity.ok(financingRequestService.getDetails(id));
   }
 }

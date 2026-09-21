@@ -7,9 +7,10 @@ requests made for consumers with an active voluntary credit ban.
 ## Current status
 
 The repository contains the reviewed design baseline, a Spring Boot backend
-bootstrap, an executable local PostgreSQL setup with Flyway migrations and a
-React/TypeScript frontend bootstrap. The monitoring service and business flows
-are not implemented yet.
+with financing-request history/details and monitoring candidate endpoints, an
+executable local PostgreSQL setup with Flyway migrations and a React/TypeScript
+frontend bootstrap. The separate monitoring service, scheduler, reports and
+email delivery are not implemented yet.
 
 ## Local frontend
 

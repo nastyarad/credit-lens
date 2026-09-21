@@ -2,6 +2,7 @@ package com.creditlens.backend.service;
 
 import com.creditlens.backend.api.dto.CreateFinancingRequestRequest;
 import com.creditlens.backend.api.dto.CreateFinancingRequestResponse;
+import com.creditlens.backend.api.dto.FinancingRequestDetailsDto;
 import com.creditlens.backend.api.dto.FinancingRequestHistoryItemDto;
 import com.creditlens.backend.api.dto.SearchFinancingRequestRequest;
 import com.creditlens.backend.api.dto.SearchFinancingRequestResponse;
@@ -141,6 +142,14 @@ public class FinancingRequestService {
         history.getSize(),
         history.getTotalElements(),
         history.getTotalPages());
+  }
+
+  public FinancingRequestDetailsDto getDetails(UUID id) {
+    FinancingRequestEntity entity =
+        financingRequestRepository
+            .findById(id)
+            .orElseThrow(() -> new FinancingRequestNotFoundException(id));
+    return FinancingRequestResponseMapper.toDetailsResponse(getFinancingRequest(entity));
   }
 
   private FinancingRequestHistoryItemDto toHistoryItem(FinancingRequestHistoryProjection item) {

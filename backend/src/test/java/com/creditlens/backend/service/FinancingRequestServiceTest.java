@@ -12,6 +12,7 @@ import static org.mockito.Mockito.when;
 import com.creditlens.backend.api.dto.CreateFinancingRequestRequest;
 import com.creditlens.backend.api.dto.CreateFinancingRequestResponse;
 import com.creditlens.backend.api.dto.CreditRegisterExtractPurposeDto;
+import com.creditlens.backend.api.dto.FinancingRequestDetailsDto;
 import com.creditlens.backend.api.dto.SearchFinancingRequestRequest;
 import com.creditlens.backend.domain.Consumer;
 import com.creditlens.backend.domain.CreditExtract;
@@ -288,6 +289,47 @@ class FinancingRequestServiceTest {
         .findHistoryByPersonalIdentityCode(
             PERSONAL_IDENTITY_CODE, org.springframework.data.domain.PageRequest.of(1, 2));
     verify(positiveCreditRegisterClient, never()).requestCreditExtract(any(), any());
+  }
+
+  @Test
+  void loadsAndMapsSavedRequestDetailsWithoutCallingPcr() {
+    FinancingRequestEntity existing =
+        existingEntity(List.of(CreditRegisterExtractPurpose.NewConsumerCredit));
+    when(financingRequestRepository.findById(REQUEST_ID)).thenReturn(Optional.of(existing));
+    when(creditExtractRepository.findByFinancingRequest_Id(REQUEST_ID))
+        .thenReturn(Optional.of(new CreditExtractEntity(emptyExtract(), existing)));
+
+    FinancingRequestDetailsDto result = service.getDetails(REQUEST_ID);
+
+    assertThat(result.id()).isEqualTo(REQUEST_ID);
+    assertThat(result.consumer().maskedPersonalIdentityCode()).isEqualTo("******-123A");
+    assertThat(result.creditExtract().extractReference()).isEqualTo(EXTRACT_REFERENCE);
+    assertThat(result.creditExtract().loans()).isEmpty();
+    assertThat(result.creditExtract().incomeData()).isEmpty();
+    verify(positiveCreditRegisterClient, never()).requestCreditExtract(any(), any());
+  }
+
+  @Test
+  void returnsNotFoundWhenSavedRequestDoesNotExist() {
+    when(financingRequestRepository.findById(REQUEST_ID)).thenReturn(Optional.empty());
+
+    assertThatThrownBy(() -> service.getDetails(REQUEST_ID))
+        .isInstanceOf(FinancingRequestNotFoundException.class)
+        .hasMessage("The requested financing request was not found.");
+    verify(creditExtractRepository, never()).findByFinancingRequest_Id(any());
+  }
+
+  @Test
+  void rejectsSavedRequestWithoutCreditExtractAsInvariantViolation() {
+    FinancingRequestEntity existing =
+        existingEntity(List.of(CreditRegisterExtractPurpose.NewConsumerCredit));
+    when(financingRequestRepository.findById(REQUEST_ID)).thenReturn(Optional.of(existing));
+    when(creditExtractRepository.findByFinancingRequest_Id(REQUEST_ID))
+        .thenReturn(Optional.empty());
+
+    assertThatThrownBy(() -> service.getDetails(REQUEST_ID))
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessage("saved financing request has no credit extract");
   }
 
   private void stubNewRequest() {
