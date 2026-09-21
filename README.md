@@ -6,11 +6,9 @@ requests made for consumers with an active voluntary credit ban.
 
 ## Current status
 
-The repository contains the reviewed design baseline, a Spring Boot backend
-with financing-request history/details and monitoring candidate endpoints, an
-executable local PostgreSQL setup with Flyway migrations and a React/TypeScript
-frontend bootstrap. The separate monitoring service, scheduler, reports and
-email delivery are not implemented yet.
+The repository contains a Spring Boot backend, a separate Spring Boot
+monitoring service, service-owned PostgreSQL schemas with Flyway migrations,
+local WireMock and Mailpit support, and a React/TypeScript frontend bootstrap.
 
 ## Local frontend
 
@@ -27,7 +25,7 @@ npm run dev
 Open `http://localhost:5173`. Requests under `/api` are proxied to the backend
 at `http://localhost:8080` during local development.
 
-## Local database
+## Local backend and monitoring environment
 
 Requirements: Docker with Compose and Java 21.
 
@@ -98,6 +96,35 @@ Run the backend tests with `./gradlew test` from `backend/`. The database
 integration test starts a disposable PostgreSQL container and verifies that
 Flyway applies the schema successfully.
 
+Start the monitoring database and Mailpit (SMTP on `1025`, web UI on
+`http://localhost:8025`) from the repository root:
+
+```bash
+docker compose up -d monitoring-postgres mailpit
+```
+
+Then, with the backend running on port `8080`, start the independently built
+monitoring service. It has no frontend endpoint and only calls the backend
+monitoring API.
+
+```bash
+cd monitoring-service
+./gradlew bootRun
+```
+
+Its local defaults are database `credit_lens_monitoring`, user and password
+`credit_lens_monitoring`, port `5433`, backend `http://localhost:8080`, and
+Mailpit. Configuration is supplied through `BACKEND_BASE_URL`,
+`BACKEND_CONNECT_TIMEOUT`, `BACKEND_READ_TIMEOUT`, `MONITORING_DB_URL`,
+`MONITORING_DB_USER`, `MONITORING_DB_PASSWORD`, `MONITORING_CRON`,
+`MONITORING_INITIAL_LOOKBACK`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`,
+`SMTP_PASSWORD`, `SMTP_AUTH_ENABLED`, `SMTP_STARTTLS_ENABLED`, and
+`SMTP_SENDER`. The fixed recipient is `pcr_monitoring@dansketest.dk`; override
+`MONITORING_RECIPIENT` only for local or test runs (set
+`SPRING_PROFILES_ACTIVE=local` for a local override).
+
+Run its checks with `./gradlew check` from `monitoring-service/`.
+
 ## Assignment coverage
 
 The planned solution covers the three required components:
@@ -106,7 +133,7 @@ The planned solution covers the three required components:
 - a backend that calls a mocked Positive Credit Register API and stores the
   results;
 - a monitoring service that periodically finds completed requests with an
-  active voluntary credit ban and sends an email report to
+  active voluntary credit ban and sends an immutable email report to
   `pcr_monitoring@dansketest.dk`.
 
 ## Architecture
@@ -114,7 +141,9 @@ The planned solution covers the three required components:
 ![Credit Lens architecture](docs/images/architecture.svg)
 
 The monitoring service uses the backend API and never reads the backend
-database directly. Each service owns its data.
+database directly. Each service owns its data. The monitoring endpoint is for
+the monitoring service only: there is no frontend navigation, dashboard,
+report preview, or user-facing monitoring API.
 
 ## Target technology
 
@@ -186,20 +215,41 @@ corresponding public Credit Lens domain/API fields exist yet.
 - No database transaction stays open during an HTTP or SMTP call.
 - Report creation is unique per interval.
 - Email delivery is retried from persisted state without rebuilding a report.
+- SMTP delivery is at-least-once: if the process stops after SMTP accepts a
+  message but before the short `SENT` database update commits, the next run can
+  deliver the stored message again.
 - API errors use problem details and correlation IDs without exposing sensitive
   values.
 
 ## Testing strategy
 
-The implementation should include:
+Backend tests use explicit boundaries:
 
-- unit tests for state transitions, masking and report-selection rules;
-- backend integration tests with PostgreSQL through Testcontainers;
-- API tests for successful, failed and repeated financing requests;
-- monitoring tests for interval boundaries and empty reports;
-- email retry tests with the SMTP provider temporarily unavailable;
-- one end-to-end happy-path test through the frontend, backend, mock and
-  monitoring service.
+- controller contract tests exercise JSON, validation, HTTP statuses and
+  problem details with mocked services;
+- unit tests exercise domain rules, mapping and service branches with mocked
+  ports;
+- component tests call a real controller, service, mapper and PCR HTTP adapter
+  against WireMock while repositories remain mocked;
+- PCR client integration tests cover the HTTP request/response contract,
+  rejection, invalid response and timeout behavior without starting Spring MVC
+  or PostgreSQL;
+- API integration tests load the complete Spring context and run against one
+  shared PostgreSQL Testcontainer and WireMock. Successful persistence is
+  verified through subsequent public API reads; direct SQL assertions are kept
+  for migrations and the no-partial-write failure invariant.
+
+The API integration tests are split by use case (create, details, history and
+monitoring) rather than collected in one application test class. History and
+monitoring tests cover their native PostgreSQL queries, including stable
+pagination, successful-extract joins, active-ban filtering and half-open time
+intervals. Separate repository tests are intentionally omitted while those
+same query semantics are already covered through the full API boundary.
+
+Frontend component tests use React Testing Library and a mocked backend API.
+The remaining broader test goals are monitoring-service/email retry coverage
+and one system end-to-end happy path through the frontend, backend, PCR mock
+and monitoring service.
 
 ## Security and privacy
 

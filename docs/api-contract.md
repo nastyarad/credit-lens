@@ -148,6 +148,9 @@ Monitoring queries use `completed_at`, an inner join to the existing
 `credit_extract` table and `voluntary_ban_active = TRUE`; they do not filter by
 a financing-request status because no such status exists. The response only
 contains a masked personal identity code and never contains the full value.
+This endpoint is exclusively an integration boundary for the separate
+monitoring service. It is not called by the frontend and does not provide a
+dashboard, report preview, or end-user monitoring capability.
 
 ## Sequence
 

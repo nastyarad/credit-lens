@@ -8,10 +8,11 @@
   <rect class="box" x="720" y="145" width="190" height="52" rx="8"/><text x="815" y="177" text-anchor="middle">PCR mock</text>
   <rect class="box" x="220" y="275" width="190" height="52" rx="8"/><text x="315" y="307" text-anchor="middle">Monitoring service</text>
   <rect class="db" x="480" y="275" width="190" height="52" rx="8"/><text x="575" y="307" text-anchor="middle">Monitoring PostgreSQL</text>
-  <rect class="box" x="740" y="275" width="150" height="52" rx="8"/><text x="815" y="307" text-anchor="middle">Email / SMTP</text>
+  <rect class="box" x="740" y="275" width="150" height="52" rx="8"/><text x="815" y="307" text-anchor="middle">Mailpit / SMTP</text>
   <path class="line" d="M160 171 H220"/><path class="line" d="M390 171 H480"/>
   <path class="line" d="M630 158 H720"/><text class="label" x="670" y="150" text-anchor="middle">credit extract</text>
   <path class="line" d="M590 145 V107 H720"/><path class="line" d="M315 275 V225 H555 V197"/>
-  <text class="label" x="440" y="218" text-anchor="middle">monitoring API</text>
-  <path class="line" d="M410 301 H480"/><path class="line" d="M670 301 H740"/>
+  <text class="label" x="440" y="218" text-anchor="middle">paged monitoring HTTP API</text>
+  <path class="line" d="M410 301 H480"/><text class="label" x="445" y="293" text-anchor="middle">owns</text>
+  <path class="line" d="M670 301 H740"/><text class="label" x="705" y="293" text-anchor="middle">SMTP</text>
 </svg>
