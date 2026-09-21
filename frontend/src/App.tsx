@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import {
   createFinancingRequest,
   FinancingRequestApiError,
@@ -8,12 +8,15 @@ import type { CreditRegisterExtractPurpose, FinancingRequestResponse } from './a
 import { FinancingRequestForm } from './components/FinancingRequestForm'
 import { FinancingRequestResult } from './components/FinancingRequestResult'
 import { FinancingRequestHistory } from './components/FinancingRequestHistory'
+import { FinancingRequestDetailsView } from './components/FinancingRequestDetails'
 import './App.css'
 
 type RequestState = 'idle' | 'submitting' | 'completed' | 'api-error' | 'network-error'
 
 function App() {
   const [section, setSection] = useState<'new' | 'history'>('new')
+  const [detailsId, setDetailsId] = useState<string | null>(null)
+  const pageTitleRef = useRef<HTMLHeadingElement>(null)
   const [state, setState] = useState<RequestState>('idle')
   const [result, setResult] = useState<FinancingRequestResponse | null>(null)
   const [error, setError] = useState<{ title: string; detail: string; reference?: string } | null>(null)
@@ -69,6 +72,17 @@ function App() {
     setState('idle')
   }
 
+  function openDetails(id: string) {
+    setSection('history')
+    setDetailsId(id)
+  }
+
+  function returnToHistory() {
+    setDetailsId(null)
+    document.title = 'Credit Lens'
+    requestAnimationFrame(() => pageTitleRef.current?.focus())
+  }
+
   const isSubmitting = state === 'submitting'
 
   return (
@@ -81,17 +95,18 @@ function App() {
         <span className="status-badge">Positive Credit Register</span>
       </header>
       <nav className="main-navigation" aria-label="Main navigation">
-        <button className={section === 'new' ? 'nav-link active' : 'nav-link'} type="button" aria-current={section === 'new' ? 'page' : undefined} onClick={() => setSection('new')}>New request</button>
-        <button className={section === 'history' ? 'nav-link active' : 'nav-link'} type="button" aria-current={section === 'history' ? 'page' : undefined} onClick={() => setSection('history')}>Request history</button>
+        <button className={section === 'new' ? 'nav-link active' : 'nav-link'} type="button" aria-current={section === 'new' ? 'page' : undefined} onClick={() => { setDetailsId(null); setSection('new') }}>New request</button>
+        <button className={section === 'history' ? 'nav-link active' : 'nav-link'} type="button" aria-current={section === 'history' ? 'page' : undefined} onClick={() => { setDetailsId(null); setSection('history') }}>Request history</button>
       </nav>
       <main>
-        <section className="hero" aria-labelledby="page-title">
+        {!detailsId && <section className="hero" aria-labelledby="page-title">
           <p className="eyebrow">Financing request</p>
-          <h1 id="page-title">A clearer view of every credit decision.</h1>
+          <h1 id="page-title" ref={pageTitleRef} tabIndex={-1}>A clearer view of every credit decision.</h1>
           <p className="hero-copy">Request a Finnish credit register extract securely and get the information you need for a financing decision.</p>
-        </section>
-        <section className="workspace" aria-labelledby={section === 'new' ? 'request-title' : 'history-title'}>
-          {section === 'history' ? <FinancingRequestHistory /> : <>
+        </section>}
+        <section className="workspace" aria-labelledby={detailsId ? 'details-title' : section === 'new' ? 'request-title' : 'history-title'}>
+          {(section === 'history' || detailsId) && <div hidden={Boolean(detailsId)}><FinancingRequestHistory onViewDetails={openDetails} /></div>}
+          {detailsId ? <FinancingRequestDetailsView id={detailsId} onBack={returnToHistory} /> : section === 'new' && <>
           {state !== 'completed' && (
             <div className="request-panel">
               <div className="section-heading">

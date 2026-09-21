@@ -12,7 +12,7 @@ function ErrorPanel({ error }: { error: { title: string; detail: string; referen
   return <div className="error-panel" role="alert"><strong>{error.title}</strong><p>{error.detail}</p>{error.reference && <span>Reference: {error.reference}</span>}</div>
 }
 
-export function FinancingRequestHistory() {
+export function FinancingRequestHistory({ onViewDetails }: { onViewDetails: (id: string) => void }) {
   const inputId = useId()
   const errorId = `${inputId}-error`
   const [value, setValue] = useState('')
@@ -66,7 +66,7 @@ export function FinancingRequestHistory() {
     {error && <ErrorPanel error={error} />}
     {page && !loading && page.items.length === 0 && <div className="empty-state"><h3>No completed financing requests were found for this consumer.</h3><p>Try another identity code to search again.</p></div>}
     {page && page.items.length > 0 && <>
-      <div className="history-list" aria-label="Completed financing requests">{page.items.map((item) => <article className="history-card" key={item.id}><dl className="result-grid"><div><dt>Identity code</dt><dd>{item.maskedPersonalIdentityCode}</dd></div><div><dt>Requested</dt><dd>{formatDate(item.requestedAt)}</dd></div><div><dt>Completed</dt><dd>{formatDate(item.completedAt)}</dd></div><div><dt>Extract reference</dt><dd className="reference-value">{item.extractReference}</dd></div><div><dt>Voluntary credit ban</dt><dd><span className={item.voluntaryCreditBanActive ? 'ban-active' : ''}>{item.voluntaryCreditBanActive ? 'Active' : 'Not active'}</span></dd></div></dl></article>)}</div>
+      <div className="history-list" aria-label="Completed financing requests">{page.items.map((item) => <article className="history-card" key={item.id}><dl className="result-grid"><div><dt>Identity code</dt><dd>{item.maskedPersonalIdentityCode}</dd></div><div><dt>Requested</dt><dd>{formatDate(item.requestedAt)}</dd></div><div><dt>Completed</dt><dd>{formatDate(item.completedAt)}</dd></div><div><dt>Extract reference</dt><dd className="reference-value" title={item.extractReference}>{item.extractReference}</dd></div><div><dt>Voluntary credit ban</dt><dd><span className={item.voluntaryCreditBanActive ? 'ban-active' : ''}>{item.voluntaryCreditBanActive ? 'Active' : 'Not active'}</span></dd></div><div><dt>Details</dt><dd><button className="secondary-button details-button" type="button" onClick={() => onViewDetails(item.id)} aria-label={`View details for extract ${item.extractReference}, requested ${formatDate(item.requestedAt)}`}>View details</button></dd></div></dl></article>)}</div>
       <nav className="pagination" aria-label="Request history pages"><button className="secondary-button" type="button" disabled={loading || !canGoPrevious} onClick={() => submittedCode && void loadHistory(submittedCode, page.page - 1)}>Previous</button><span aria-live="polite">Page {currentPage} of {totalPages}</span><button className="secondary-button" type="button" disabled={loading || !canGoNext} onClick={() => submittedCode && void loadHistory(submittedCode, page.page + 1)}>Next</button></nav>
     </>}
   </section>
