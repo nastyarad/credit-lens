@@ -4,6 +4,7 @@ import type {
   FinancingRequestResponse,
   FinancingRequestHistoryPage,
   FinancingRequestSearchPayload,
+  FinancingRequestDetails,
 } from './types'
 
 export class FinancingRequestApiError extends Error {
@@ -113,6 +114,39 @@ export async function searchFinancingRequests(
 
   try {
     return (await response.json()) as FinancingRequestHistoryPage
+  } catch {
+    throw new FinancingRequestApiError(response.status, {
+      title: 'Invalid server response',
+      detail: 'Credit Lens returned a response that could not be read.',
+      status: response.status,
+    })
+  }
+}
+
+export async function getFinancingRequestDetails(
+  id: string,
+  signal?: AbortSignal,
+): Promise<FinancingRequestDetails> {
+  let response: Response
+  try {
+    response = await fetch(`/api/v1/financing-requests/${encodeURIComponent(id)}`, {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+      signal,
+    })
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') throw error
+    throw new FinancingRequestNetworkError()
+  }
+
+  if (!response.ok) {
+    let body: unknown = null
+    try { body = await response.json() } catch { /* Keep server response private. */ }
+    throw new FinancingRequestApiError(response.status, parseApiProblem(body, response.status))
+  }
+
+  try {
+    return (await response.json()) as FinancingRequestDetails
   } catch {
     throw new FinancingRequestApiError(response.status, {
       title: 'Invalid server response',

@@ -39,7 +39,11 @@ function safeError(error: unknown) {
   };
 }
 
-export function FinancingRequestHistory() {
+export function FinancingRequestHistory({
+  onViewDetails,
+}: {
+  onViewDetails: (id: string) => void;
+}) {
   const inputId = useId();
   const errorId = `${inputId}-error`;
   const summaryRef = useRef<HTMLDivElement>(null);
@@ -180,6 +184,7 @@ export function FinancingRequestHistory() {
                   <th>Consumer</th>
                   <th>Voluntary ban</th>
                   <th>Extract reference</th>
+                  <th>Details</th>
                 </tr>
               </thead>
               <tbody>
@@ -206,6 +211,16 @@ export function FinancingRequestHistory() {
                           ? "Active"
                           : "None reported"}
                       </span>
+                    </td>
+                    <td>
+                      <button
+                        className="secondary-button details-button"
+                        type="button"
+                        onClick={() => onViewDetails(item.id)}
+                        aria-label={`View details for extract ${item.extractReference}`}
+                      >
+                        View details
+                      </button>
                     </td>
                     <td>
                       <span className="mobile-label">Reference</span>

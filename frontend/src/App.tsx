@@ -23,6 +23,7 @@ import type {
 import { FinancingRequestForm } from "./components/FinancingRequestForm";
 import { FinancingRequestResult } from "./components/FinancingRequestResult";
 import { FinancingRequestHistory } from "./components/FinancingRequestHistory";
+import { FinancingRequestDetailsView } from "./components/FinancingRequestDetails";
 import "./App.css";
 
 type RequestState =
@@ -120,6 +121,7 @@ function classifyError(error: unknown): RequestError {
 
 function App() {
   const [section, setSection] = useState<"new" | "history">("new");
+  const [detailsId, setDetailsId] = useState<string | null>(null);
   const [state, setState] = useState<RequestState>("idle");
   const [result, setResult] = useState<FinancingRequestResponse | null>(null);
   const [error, setError] = useState<RequestError | null>(null);
@@ -128,7 +130,9 @@ function App() {
   const pageTitleRef = useRef<HTMLHeadingElement>(null);
   const isSubmitting = state === "submitting";
   const title =
-    section === "history"
+    detailsId
+      ? "Credit register extract"
+      : section === "history"
       ? "Request history"
       : state === "completed"
         ? "Register extract received"
@@ -141,6 +145,7 @@ function App() {
   }, [error, title]);
   function moveToSection(nextSection: "new" | "history") {
     setSection(nextSection);
+    setDetailsId(null);
     if (nextSection === "new") {
       setResult(null);
       setError(null);
@@ -196,6 +201,14 @@ function App() {
         lastSubmission.personalIdentityCode,
         lastSubmission.purpose,
       );
+  }
+  function openDetails(id: string) {
+    setSection("history");
+    setDetailsId(id);
+  }
+  function returnToHistory() {
+    setDetailsId(null);
+    requestAnimationFrame(() => pageTitleRef.current?.focus());
   }
   return (
     <div className="app-shell">
@@ -278,7 +291,9 @@ function App() {
                   {title}
                 </h1>
                 <p>
-                  {section === "history" ? (
+                  {detailsId ? (
+                    "Review the immutable register snapshot for this financing request."
+                  ) : section === "history" ? (
                     "Find successful register requests for one consumer. Failed requests are not stored."
                   ) : state === "completed" && result ? (
                     <>
@@ -313,8 +328,10 @@ function App() {
                 </button>
               )}
             </div>
-            {section === "history" ? (
-              <FinancingRequestHistory />
+            {detailsId ? (
+              <FinancingRequestDetailsView id={detailsId} onBack={returnToHistory} />
+            ) : section === "history" ? (
+              <FinancingRequestHistory onViewDetails={openDetails} />
             ) : state === "completed" && result ? (
               <FinancingRequestResult result={result} />
             ) : (
