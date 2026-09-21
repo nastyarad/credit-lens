@@ -246,10 +246,11 @@ pagination, successful-extract joins, active-ban filtering and half-open time
 intervals. Separate repository tests are intentionally omitted while those
 same query semantics are already covered through the full API boundary.
 
-Frontend component tests use React Testing Library and a mocked backend API.
-The remaining broader test goals are monitoring-service/email retry coverage
-and one system end-to-end happy path through the frontend, backend, PCR mock
-and monitoring service.
+Monitoring-service tests cover interval selection, persisted-content retry
+orchestration, backend pagination/error handling, PostgreSQL migrations and
+SMTP delivery. Frontend component tests use React Testing Library and a mocked
+backend API. The remaining broader goal is one system end-to-end happy path
+through the frontend, backend, PCR mock and monitoring service.
 
 ## Security and privacy
 

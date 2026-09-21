@@ -1,0 +1,69 @@
+{
+  "creditRegisterExtract": {
+    "extractReference": "55555555-5555-5555-5555-555555555555",
+    "creationTimeUtc": "2026-09-18T10:15:30Z",
+    "personRequested": {
+      "idCode": "010190-123A"
+    },
+    "creditInformationSummary": {
+      "lendersCount": 2,
+      "loanContractsCount": 1,
+      "guaranteedLoanContractsCount": 0
+    },
+    "repaymentsPaidLastAmount": [
+      {
+        "currencyCode": "EUR",
+        "sum": 125.50
+      }
+    ],
+    "sumOfMonthlyLeasingInstalments": [
+      {
+        "currencyCode": "EUR",
+        "sum": 250.00
+      }
+    ],
+    "loans": [
+      {
+        "loanType": "LumpSumLoan",
+        "contractDate": "2025-01-15T00:00:00Z",
+        "isLoanWithCollateral": true,
+        "collateralTypes": ["ApartmentOrRealEstate"],
+        "borrowersCount": 1,
+        "currencyCode": "EUR",
+        "paymentPlan": {
+          "isInDebtArrangement": false,
+          "isInBusinessRestructuringProgram": false
+        },
+        "accuracyIsDenied": false,
+        "lumpSumLoan": {
+          "amountIssued": 10000,
+          "amountPaid": 1500,
+          "balance": 8500,
+          "plannedFinalDueDate": "2030-01-15T00:00:00Z",
+          "amortizationFrequency": 12
+        },
+        "delayedAmounts": [
+          {
+            "delayedInstalment": 100,
+            "originalDueDate": "2026-08-15T00:00:00Z"
+          }
+        ],
+        "isForeclosed": false
+      }
+    ],
+    "incomeData": [
+      {
+        "year": 2026,
+        "months": [
+          {
+            "month": 8,
+            "wagesGrossAmount": 4000,
+            "wagesNetAmount": 3000,
+            "benefitsGrossAmount": 0,
+            "benefitsNetAmount": 0
+          }
+        ]
+      }
+    ]
+  }
+}
