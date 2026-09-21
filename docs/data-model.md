@@ -43,3 +43,40 @@ The extract and its request are inserted in the same transaction.
 The PoC intentionally does not reserve `clientRequestId` before PCR. Two
 concurrent calls may both call PCR; the unique constraint prevents two stored
 requests. Exactly-once PCR execution is outside scope.
+
+## Monitoring service database
+
+The monitoring service owns a separate PostgreSQL database. It never connects
+to the backend database and receives only the masked monitoring API snapshot.
+
+### `monitoring_report`
+
+Each immutable report stores its UUID, half-open interval, recipient, subject,
+fully rendered UTF-8 plain-text body, content type, item count, creation time,
+delivery timestamps, attempts, safe last-error summary, and one of `CREATED`,
+`SENT`, or `FAILED`. The schema enforces `interval_start < interval_end`, a
+unique interval, valid states, and non-negative counts. Delivery transitions
+are `CREATED -> SENT`, `CREATED -> FAILED`, `FAILED -> SENT`, and `FAILED ->
+FAILED`.
+
+### `monitoring_report_item`
+
+Items are immutable snapshots linked to a report and ordered by a unique
+ordinal. They retain only masked identity code, requested/completed timestamps,
+voluntary-ban reason, and the three summary counts. They never store a full
+personal identity code, financing-request ID, or extract reference.
+
+### Monitoring transaction boundaries
+
+1. Fetch and validate every backend API page outside a database transaction.
+2. In a short transaction, persist the report, ordered item snapshots and
+   already-rendered subject/body.
+3. Send SMTP outside a database transaction.
+4. In another short transaction, update only delivery metadata.
+
+When SMTP fails, a subsequent run delivers the stored subject/body without
+calling the backend again. The checkpoint is the maximum persisted
+`interval_end`; therefore an unavailable/invalid backend response creates no
+report and does not advance the interval. SMTP acknowledgement followed by a
+process crash before the `SENT` commit can cause a duplicate delivery, so the
+PoC intentionally offers at-least-once rather than exactly-once email delivery.

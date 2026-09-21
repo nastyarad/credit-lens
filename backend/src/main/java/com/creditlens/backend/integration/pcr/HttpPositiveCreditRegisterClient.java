@@ -82,6 +82,7 @@ public class HttpPositiveCreditRegisterClient implements PositiveCreditRegisterC
   private static boolean isTimeout(Throwable exception) {
     for (Throwable current = exception; current != null; current = current.getCause()) {
       if (current instanceof SocketTimeoutException
+          || current instanceof java.net.http.HttpTimeoutException
           || current instanceof java.util.concurrent.TimeoutException) return true;
     }
     return false;
