@@ -551,8 +551,12 @@ code,
   display: grid;
   grid-template-columns: minmax(220px, 650px) auto;
   gap: 12px;
-  align-items: end;
+  align-items: start;
   margin-bottom: 24px;
+}
+.history-search > .primary-button {
+  align-self: start;
+  margin-top: 24px;
 }
 .history-view > .error-panel {
   margin-bottom: 20px;
@@ -770,6 +774,9 @@ td time {
   }
   .history-search {
     grid-template-columns: 1fr;
+  }
+  .history-search > .primary-button {
+    margin-top: 0;
   }
   .history-meta {
     display: block;

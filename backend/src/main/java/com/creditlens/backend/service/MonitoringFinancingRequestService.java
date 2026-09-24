@@ -1,7 +1,7 @@
 package com.creditlens.backend.service;
 
-import com.creditlens.backend.api.dto.GetMonitoringFinancingRequestsRequest;
-import com.creditlens.backend.api.dto.GetMonitoringFinancingRequestsResponse;
+import com.creditlens.backend.api.dto.ListMonitoringFinancingRequestsRequest;
+import com.creditlens.backend.api.dto.ListMonitoringFinancingRequestsResponse;
 import com.creditlens.backend.api.dto.MonitoringFinancingRequestDto;
 import com.creditlens.backend.api.dto.VoluntaryCreditBanReasonDto;
 import com.creditlens.backend.domain.PersonalIdentityCode;
@@ -21,7 +21,7 @@ public class MonitoringFinancingRequestService {
     this.financingRequestRepository = financingRequestRepository;
   }
 
-  public GetMonitoringFinancingRequestsResponse get(GetMonitoringFinancingRequestsRequest request) {
+  public ListMonitoringFinancingRequestsResponse list(ListMonitoringFinancingRequestsRequest request) {
     Page<MonitoringFinancingRequestProjection> results =
         financingRequestRepository.findMonitoringFinancingRequests(
             request.completedFrom(),
@@ -29,7 +29,7 @@ public class MonitoringFinancingRequestService {
             PageRequest.of(request.page(), request.size()));
     List<MonitoringFinancingRequestDto> items =
         results.getContent().stream().map(this::toDto).toList();
-    return new GetMonitoringFinancingRequestsResponse(
+    return new ListMonitoringFinancingRequestsResponse(
         items,
         results.getNumber(),
         results.getSize(),

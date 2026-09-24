@@ -1,10 +1,10 @@
 {
   "creditRegisterExtract": {
     "extractReference": "{{randomValue type='UUID'}}",
-    "creationTimeUtc": "2026-09-18T11:15:30Z",
+    "creationTimeUtc": "2026-09-18T11:25:30Z",
     "personRequested": {"idCode": "{{jsonPath request.body '$.idCode'}}"},
-    "voluntaryBanOnCredits": {"isInEffect": true, "reason": "RiskOfIdentityTheft"},
-    "creditInformationSummary": {"lendersCount": 2, "loanContractsCount": 3, "guaranteedLoanContractsCount": 1},
+    "voluntaryBanOnCredits": {"isInEffect": true, "reason": "ControlOfPersonalFinances"},
+    "creditInformationSummary": {"lendersCount": 4, "loanContractsCount": 5, "guaranteedLoanContractsCount": 1},
     "repaymentsPaidLastAmount": [], "sumOfMonthlyLeasingInstalments": [], "loans": [], "incomeData": []
   }
 }

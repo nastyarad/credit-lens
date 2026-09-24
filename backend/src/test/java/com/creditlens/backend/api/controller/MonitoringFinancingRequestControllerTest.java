@@ -11,8 +11,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.creditlens.backend.api.dto.GetMonitoringFinancingRequestsRequest;
-import com.creditlens.backend.api.dto.GetMonitoringFinancingRequestsResponse;
+import com.creditlens.backend.api.dto.ListMonitoringFinancingRequestsRequest;
+import com.creditlens.backend.api.dto.ListMonitoringFinancingRequestsResponse;
 import com.creditlens.backend.api.dto.MonitoringFinancingRequestDto;
 import com.creditlens.backend.api.dto.VoluntaryCreditBanReasonDto;
 import com.creditlens.backend.service.MonitoringFinancingRequestService;
@@ -53,7 +53,7 @@ class MonitoringFinancingRequestControllerTest {
 
   @Test
   void returnsMonitoringResponseAndUsesDefaultPagination() throws Exception {
-    when(monitoringFinancingRequestService.get(any())).thenReturn(response(List.of(item())));
+    when(monitoringFinancingRequestService.list(any())).thenReturn(response(List.of(item())));
 
     mockMvc
         .perform(
@@ -72,9 +72,9 @@ class MonitoringFinancingRequestControllerTest {
         .andExpect(jsonPath("$.totalItems").value(1))
         .andExpect(jsonPath("$.totalPages").value(1));
 
-    ArgumentCaptor<GetMonitoringFinancingRequestsRequest> request =
-        ArgumentCaptor.forClass(GetMonitoringFinancingRequestsRequest.class);
-    verify(monitoringFinancingRequestService).get(request.capture());
+    ArgumentCaptor<ListMonitoringFinancingRequestsRequest> request =
+        ArgumentCaptor.forClass(ListMonitoringFinancingRequestsRequest.class);
+    verify(monitoringFinancingRequestService).list(request.capture());
     assertThat(request.getValue().completedFrom()).isEqualTo(Instant.parse(FROM));
     assertThat(request.getValue().completedTo()).isEqualTo(Instant.parse(TO));
     assertThat(request.getValue().page()).isZero();
@@ -83,8 +83,8 @@ class MonitoringFinancingRequestControllerTest {
 
   @Test
   void passesExplicitPaginationAndReturnsEmptyItems() throws Exception {
-    when(monitoringFinancingRequestService.get(any()))
-        .thenReturn(new GetMonitoringFinancingRequestsResponse(List.of(), 2, 25, 0, 0));
+    when(monitoringFinancingRequestService.list(any()))
+        .thenReturn(new ListMonitoringFinancingRequestsResponse(List.of(), 2, 25, 0, 0));
 
     mockMvc
         .perform(
@@ -100,9 +100,9 @@ class MonitoringFinancingRequestControllerTest {
         .andExpect(jsonPath("$.totalItems").value(0))
         .andExpect(jsonPath("$.totalPages").value(0));
 
-    ArgumentCaptor<GetMonitoringFinancingRequestsRequest> request =
-        ArgumentCaptor.forClass(GetMonitoringFinancingRequestsRequest.class);
-    verify(monitoringFinancingRequestService).get(request.capture());
+    ArgumentCaptor<ListMonitoringFinancingRequestsRequest> request =
+        ArgumentCaptor.forClass(ListMonitoringFinancingRequestsRequest.class);
+    verify(monitoringFinancingRequestService).list(request.capture());
     assertThat(request.getValue().page()).isEqualTo(2);
     assertThat(request.getValue().size()).isEqualTo(25);
   }
@@ -144,12 +144,12 @@ class MonitoringFinancingRequestControllerTest {
         .andExpect(status().isBadRequest())
         .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON));
 
-    verify(monitoringFinancingRequestService, never()).get(any());
+    verify(monitoringFinancingRequestService, never()).list(any());
   }
 
-  private GetMonitoringFinancingRequestsResponse response(
+  private ListMonitoringFinancingRequestsResponse response(
       List<MonitoringFinancingRequestDto> items) {
-    return new GetMonitoringFinancingRequestsResponse(items, 0, 100, items.size(), 1);
+    return new ListMonitoringFinancingRequestsResponse(items, 0, 100, items.size(), 1);
   }
 
   private MonitoringFinancingRequestDto item() {

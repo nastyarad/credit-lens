@@ -17,19 +17,16 @@ interface Props {
     personalIdentityCode: string,
     purpose: CreditRegisterExtractPurpose,
   ) => void;
-  showClearButton: boolean;
 }
 
 export function FinancingRequestForm({
   disabled,
   onSubmit,
-  showClearButton,
 }: Props) {
   const identityInputId = useId();
   const purposeInputId = useId();
   const identityErrorId = `${identityInputId}-error`;
   const identityRef = useRef<HTMLInputElement>(null);
-  const summaryRef = useRef<HTMLDivElement>(null);
   const [personalIdentityCode, setPersonalIdentityCode] = useState("");
   const [purpose, setPurpose] =
     useState<CreditRegisterExtractPurpose>("NewConsumerCredit");
@@ -41,7 +38,7 @@ export function FinancingRequestForm({
       setValidationError(
         "Enter a Finnish personal identity code in the required format.",
       );
-      requestAnimationFrame(() => summaryRef.current?.focus());
+      requestAnimationFrame(() => identityRef.current?.focus());
       return;
     }
     setValidationError("");
@@ -64,22 +61,6 @@ export function FinancingRequestForm({
         onSubmit={handleSubmit}
         noValidate
       >
-        {validationError && (
-          <div
-            className="error-summary"
-            ref={summaryRef}
-            tabIndex={-1}
-            role="alert"
-          >
-            <h2>There is a problem</h2>
-            <a
-              href={`#${identityInputId}`}
-              onClick={() => identityRef.current?.focus()}
-            >
-              {validationError}
-            </a>
-          </div>
-        )}
         <div className="field-group">
           <label htmlFor={identityInputId}>
             Finnish personal identity code
@@ -106,7 +87,7 @@ export function FinancingRequestForm({
             Used only for this request. Results display a masked value.
           </p>
           {validationError && (
-            <p className="field-error" id={identityErrorId}>
+            <p className="field-error" id={identityErrorId} role="alert">
               {validationError}
             </p>
           )}
@@ -144,15 +125,14 @@ export function FinancingRequestForm({
               <ArrowRight aria-hidden="true" />
               {disabled ? "Requesting extract…" : "Request extract"}
             </button>
-            {showClearButton && personalIdentityCode && (
-              <button
-                className="secondary-button"
-                type="button"
-                onClick={clearForm}
-              >
-                Clear form
-              </button>
-            )}
+            <button
+              className="secondary-button"
+              type="button"
+              onClick={clearForm}
+              disabled={disabled || !personalIdentityCode}
+            >
+              Clear form
+            </button>
           </div>
         </div>
       </form>

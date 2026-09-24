@@ -75,7 +75,7 @@ models contain `requestedAt`, `completedAt`, masked identity data and the
 immutable extract; they do not contain status or error fields. An extract's
 presence is the success indicator.
 
-`POST /financing-requests/search` searches history by a
+`POST /financing-requests/search` accepts a `SearchFinancingRequestsRequest` and searches history by a
 `personalIdentityCode` supplied only in the request body:
 
 ```json
@@ -83,14 +83,14 @@ presence is the success indicator.
 ```
 
 `page` defaults to `0`; `size` defaults to `20` and accepts values from `1`
-through `100`. The response is a `SearchFinancingRequestResponse` with history
+through `100`. The response is a `SearchFinancingRequestsResponse` with history
 items, ordered by
 `requestedAt DESC, id DESC` and paginated by the database. An unknown consumer
 returns an empty page. Only requests with an associated `credit_extract` are
 included. The response contains masked identity data and no status or error
 fields.
 
-`GET /api/v1/financing-requests/{id}` returns the complete details of one successfully
+`GET /api/v1/financing-requests/{id}` returns a `GetFinancingRequestDetailsResponse` with the complete details of one successfully
 saved financing request, including its one immutable credit extract. The
 endpoint never calls PCR and returns no status, error, newlyCreated or full
 personal identity code.
@@ -113,8 +113,9 @@ timestamps compatible with `Instant`. `completedFrom` is inclusive and
 optional page size defaulting to `100`, with allowed values from `1` through
 `500`.
 
-Results are sorted stably by `completedAt ASC, financingRequestId ASC` and
-have the following operation response shape:
+The endpoint accepts a `ListMonitoringFinancingRequestsRequest`. Results are sorted stably by
+`completedAt ASC, financingRequestId ASC` and return a `ListMonitoringFinancingRequestsResponse`
+with the following operation response shape:
 
 ```json
 {

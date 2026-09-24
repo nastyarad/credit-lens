@@ -7,12 +7,12 @@ import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
-class SearchFinancingRequestResponseTest {
+class SearchFinancingRequestsResponseTest {
   @Test
   void copiesItemsAndValidatesPageMetadata() {
     List<FinancingRequestHistoryItemDto> items = new ArrayList<>();
-    SearchFinancingRequestResponse response =
-        new SearchFinancingRequestResponse(items, 0, 20, 0, 0);
+    SearchFinancingRequestsResponse response =
+        new SearchFinancingRequestsResponse(items, 0, 20, 0, 0);
 
     items.add(
         new FinancingRequestHistoryItemDto(

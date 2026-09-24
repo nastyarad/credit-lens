@@ -8,6 +8,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.creditlens.monitoring.configuration.BackendProperties;
 import com.github.tomakehurst.wiremock.WireMockServer;
+import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
@@ -24,7 +25,7 @@ class HttpMonitoringBackendClientTest {
 
   @BeforeEach
   void setUp() {
-    backend = new WireMockServer();
+    backend = new WireMockServer(WireMockConfiguration.options().dynamicPort());
     backend.start();
     client =
         new HttpMonitoringBackendClient(

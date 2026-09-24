@@ -20,9 +20,9 @@ public class MonitoringRecipientValidator {
   @PostConstruct
   void validateRecipientOverride() {
     if (!FIXED_RECIPIENT.equals(properties.recipient())
-        && !environment.acceptsProfiles(Profiles.of("local", "test"))) {
+        && !environment.acceptsProfiles(Profiles.of("local", "test", "real-mail"))) {
       throw new IllegalStateException(
-          "MONITORING_RECIPIENT may be overridden only in local or test");
+          "MONITORING_RECIPIENT may be overridden only in local, test or real-mail");
     }
   }
 }

@@ -3,6 +3,8 @@ import type { ReactNode } from 'react'
 import { FinancingRequestApiError, FinancingRequestNetworkError, getFinancingRequestDetails } from '../api/financingRequests'
 import type { CurrencyAmount, FinancingRequestDetails, Loan } from '../api/types'
 
+const INCOME_CURRENCY = 'EUR'
+
 function label(value: string) {
   const words = value.replace(/([a-z0-9])([A-Z])/g, '$1 $2').toLowerCase().replace('lump sum', 'lump-sum')
   return words.replace(/^./, (first) => first.toUpperCase())
@@ -17,13 +19,15 @@ function instant(value: string, utc = false) {
   return utc ? `${formatted} UTC` : formatted
 }
 
-function number(value: number | null) {
-  return value === null ? 'Not provided' : new Intl.NumberFormat().format(value)
-}
-
 function amount(value: number | null, currencyCode: string | null) {
   if (value === null) return 'Not provided'
   return `${currencyCode ?? 'Currency not provided'} ${new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 }).format(value)}`
+}
+
+function incomeAmount(value: number | null) {
+  return value === null
+    ? 'Not provided'
+    : `${INCOME_CURRENCY} ${new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 }).format(value)}`
 }
 
 function currencyAmounts(values: CurrencyAmount[]) {
@@ -68,10 +72,10 @@ export function FinancingRequestDetailsView({ id, onBack }: { id: string; onBack
       catch (requestError) {
         if (requestError instanceof DOMException && requestError.name === 'AbortError') return
         if (requestError instanceof FinancingRequestApiError) setError(requestError.status === 404
-          ? { title: 'Request not found', detail: 'This financing request is no longer available.', reference: requestError.problem.correlationId, notFound: true }
-          : { title: requestError.problem.title || 'Details could not be loaded', detail: requestError.problem.detail || 'Please try again.', reference: requestError.problem.correlationId })
-        else if (requestError instanceof FinancingRequestNetworkError) setError({ title: 'Connection problem', detail: 'Credit Lens could not be reached. Check the connection and try again.' })
-        else setError({ title: 'Details could not be loaded', detail: 'Something unexpected happened. Please try again.' })
+          ? { title: 'Request not found', detail: 'Return to request history and choose another request.', reference: requestError.problem.correlationId, notFound: true }
+          : { title: 'We could not load request details', detail: 'Try again. If the problem continues, contact support.', reference: requestError.problem.correlationId })
+        else if (requestError instanceof FinancingRequestNetworkError) setError({ title: 'We could not load request details', detail: 'Check your connection and try again.' })
+        else setError({ title: 'We could not load request details', detail: 'Try again. If the problem continues, contact support.' })
       } finally { if (!controller.signal.aborted) setLoading(false) }
     })()
     return () => controller.abort()
@@ -87,7 +91,7 @@ export function FinancingRequestDetailsView({ id, onBack }: { id: string; onBack
     <p className="eyebrow">Request history</p>
     <h1 id="details-title" ref={headingRef} tabIndex={-1}>Credit register extract</h1>
     {loading && <div className="loading-message" role="status" aria-live="polite"><span className="spinner" aria-hidden="true" /><span>Loading credit register extract…</span></div>}
-    {error && <div className="error-panel" ref={errorRef} tabIndex={-1} role="alert"><strong>{error.title}</strong><p>{error.detail}</p>{error.reference && <span>Reference: {error.reference}</span>}<p><button className="secondary-button" type="button" onClick={() => { setError(null); setLoading(true); setRetry((value) => value + 1) }}>Retry</button></p></div>}
+    {error && <div className="error-panel" ref={errorRef} tabIndex={-1} role="alert"><strong>{error.title}</strong><p>{error.detail}</p>{error.reference && <span>Support reference: {error.reference}</span>}{!error.notFound && <p><button className="secondary-button" type="button" onClick={() => { setError(null); setLoading(true); setRetry((value) => value + 1) }}>Retry</button></p>}</div>}
     {extract && summary && <>
       <p className="masked-code">{details.consumer.maskedPersonalIdentityCode}</p><p className="snapshot-label">Immutable register snapshot</p>
       <div className={extract.voluntaryBanOnCredits.isInEffect ? 'ban-banner active-ban' : 'ban-banner'} role={extract.voluntaryBanOnCredits.isInEffect ? 'alert' : undefined}><span aria-hidden="true">{extract.voluntaryBanOnCredits.isInEffect ? '⚠' : '✓'}</span><div><strong>{extract.voluntaryBanOnCredits.isInEffect ? 'Active voluntary credit ban' : 'No active voluntary credit ban reported'}</strong>{extract.voluntaryBanOnCredits.reason && <p>Reason: {label(extract.voluntaryBanOnCredits.reason)}</p>}</div></div>
@@ -96,7 +100,7 @@ export function FinancingRequestDetailsView({ id, onBack }: { id: string; onBack
       <details className="detail-section"><summary>Repayments &amp; leasing</summary><dl className="result-grid detail-grid"><Value label="Repayments paid last amount">{currencyAmounts(summary.repaymentsPaidLastAmount)}</Value><Value label="Monthly leasing instalments">{currencyAmounts(summary.sumOfMonthlyLeasingInstalments)}</Value></dl></details>
       <details className="detail-section"><summary>Loans ({extract.loans.length})</summary>{extract.loans.length ? extract.loans.map((loan, index) => <LoanDetails key={index} loan={loan} index={index} />) : <p className="empty-inline">No loans were reported.</p>}</details>
       <details className="detail-section"><summary>Delayed amounts ({delayed.length})</summary>{delayed.length ? <table><caption>Reported delayed amounts by loan</caption><thead><tr><th>Loan</th><th>Delayed instalment</th><th>Original due date</th><th>Foreclosed</th></tr></thead><tbody>{delayed.map((entry, index) => <tr key={index}><td data-label="Loan">Loan {entry.loanIndex + 1} — {label(entry.loanType)}</td><td data-label="Delayed instalment">{amount(entry.delayedInstalment, entry.currencyCode)}</td><td data-label="Original due date">{date(entry.originalDueDate)}</td><td data-label="Foreclosed">{entry.isForeclosed ? 'Yes' : 'No'}</td></tr>)}</tbody></table> : <p className="empty-inline">No delayed amounts were reported.</p>}</details>
-      <details className="detail-section"><summary>Income ({extract.incomeData.reduce((total, item) => total + item.months.length, 0)} months)</summary>{extract.incomeData.length ? extract.incomeData.map((income) => <section key={income.year}><h3>{income.year}</h3>{income.months.length ? <table><caption>Income amounts; currency is not provided by the API.</caption><thead><tr><th>Month</th><th>Wages gross</th><th>Wages net</th><th>Benefits gross</th><th>Benefits net</th></tr></thead><tbody>{income.months.map((month) => <tr key={month.month}><td data-label="Month">{month.month}</td><td data-label="Wages gross">{number(month.wagesGrossAmount)} (currency not provided)</td><td data-label="Wages net">{number(month.wagesNetAmount)} (currency not provided)</td><td data-label="Benefits gross">{number(month.benefitsGrossAmount)} (currency not provided)</td><td data-label="Benefits net">{number(month.benefitsNetAmount)} (currency not provided)</td></tr>)}</tbody></table> : <p className="empty-inline">No income months were reported for this year.</p>}</section>) : <p className="empty-inline">No income data were reported.</p>}</details>
+      <details className="detail-section"><summary>Income ({extract.incomeData.reduce((total, item) => total + item.months.length, 0)} months)</summary>{extract.incomeData.length ? extract.incomeData.map((income) => <section key={income.year}><h3>{income.year}</h3>{income.months.length ? <table><caption>Income amounts (EUR)</caption><thead><tr><th>Month</th><th>Wages gross</th><th>Wages net</th><th>Benefits gross</th><th>Benefits net</th></tr></thead><tbody>{income.months.map((month) => <tr key={month.month}><td data-label="Month">{month.month}</td><td data-label="Wages gross">{incomeAmount(month.wagesGrossAmount)}</td><td data-label="Wages net">{incomeAmount(month.wagesNetAmount)}</td><td data-label="Benefits gross">{incomeAmount(month.benefitsGrossAmount)}</td><td data-label="Benefits net">{incomeAmount(month.benefitsNetAmount)}</td></tr>)}</tbody></table> : <p className="empty-inline">No income months were reported for this year.</p>}</section>) : <p className="empty-inline">No income data were reported.</p>}</details>
     </>}
   </section>
 }

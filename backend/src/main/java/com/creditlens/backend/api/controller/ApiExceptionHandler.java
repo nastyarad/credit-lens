@@ -1,6 +1,6 @@
 package com.creditlens.backend.api.controller;
 
-import com.creditlens.backend.api.dto.ApiProblemDto;
+import com.creditlens.backend.api.dto.ApiProblemResponse;
 import com.creditlens.backend.integration.pcr.PositiveCreditRegisterException;
 import com.creditlens.backend.service.ClientRequestConflictException;
 import com.creditlens.backend.service.FinancingRequestNotFoundException;
@@ -25,11 +25,11 @@ public class ApiExceptionHandler {
     HttpMessageNotReadableException.class,
     MethodArgumentTypeMismatchException.class
   })
-  public ResponseEntity<ApiProblemDto> handleInvalidRequest(
+  public ResponseEntity<ApiProblemResponse> handleInvalidRequest(
       Exception exception, HttpServletRequest request) {
     UUID correlationId = correlationId(request.getHeader("X-Correlation-Id"));
-    ApiProblemDto problem =
-        new ApiProblemDto(
+    ApiProblemResponse problem =
+        new ApiProblemResponse(
             URI.create("https://credit-lens.local/problems/invalid-request"),
             "Invalid request",
             400,
@@ -43,11 +43,11 @@ public class ApiExceptionHandler {
   }
 
   @ExceptionHandler(FinancingRequestNotFoundException.class)
-  public ResponseEntity<ApiProblemDto> handleFinancingRequestNotFound(
+  public ResponseEntity<ApiProblemResponse> handleFinancingRequestNotFound(
       FinancingRequestNotFoundException exception, HttpServletRequest request) {
     UUID correlationId = correlationId(request.getHeader("X-Correlation-Id"));
-    ApiProblemDto problem =
-        new ApiProblemDto(
+    ApiProblemResponse problem =
+        new ApiProblemResponse(
             URI.create("https://credit-lens.local/problems/financing-request-not-found"),
             "Financing request not found",
             404,
@@ -61,11 +61,11 @@ public class ApiExceptionHandler {
   }
 
   @ExceptionHandler(ClientRequestConflictException.class)
-  public ResponseEntity<ApiProblemDto> handleClientRequestConflict(
+  public ResponseEntity<ApiProblemResponse> handleClientRequestConflict(
       ClientRequestConflictException exception, HttpServletRequest request) {
     UUID correlationId = correlationId(request.getHeader("X-Correlation-Id"));
-    ApiProblemDto problem =
-        new ApiProblemDto(
+    ApiProblemResponse problem =
+        new ApiProblemResponse(
             URI.create("https://credit-lens.local/problems/client-request-id-conflict"),
             "Client request ID conflict",
             409,
@@ -79,7 +79,7 @@ public class ApiExceptionHandler {
   }
 
   @ExceptionHandler(PositiveCreditRegisterException.class)
-  public ResponseEntity<ApiProblemDto> handlePositiveCreditRegisterFailure(
+  public ResponseEntity<ApiProblemResponse> handlePositiveCreditRegisterFailure(
       PositiveCreditRegisterException exception, HttpServletRequest request) {
     int status =
         switch (exception.kind()) {
@@ -89,8 +89,8 @@ public class ApiExceptionHandler {
         };
     String slug = exception.kind().name().toLowerCase().replace('_', '-');
     UUID correlationId = correlationId(request.getHeader("X-Correlation-Id"));
-    ApiProblemDto problem =
-        new ApiProblemDto(
+    ApiProblemResponse problem =
+        new ApiProblemResponse(
             URI.create("https://credit-lens.local/problems/pcr-" + slug),
             "Positive Credit Register request failed",
             status,

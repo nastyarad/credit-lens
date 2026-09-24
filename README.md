@@ -62,6 +62,8 @@ The WireMock identity-code scenarios are deterministic:
 | --- | --- |
 | `010190-123A` | Full successful extract, no voluntary ban |
 | `020290-123A` | Successful extract with active `RiskOfIdentityTheft` ban |
+| `070790-123A` | Successful extract with active `ControlOfPersonalFinances` ban |
+| `080890-123A` | Successful extract with active `Other` voluntary ban |
 | `030390-123A` | PCR-shaped HTTP 400 rejection |
 | `040490-123A` | HTTP 503 unavailable |
 | `050590-123A` | HTTP 200 with missing extract |
@@ -122,6 +124,30 @@ Mailpit. Configuration is supplied through `BACKEND_BASE_URL`,
 `SMTP_SENDER`. The fixed recipient is `pcr_monitoring@dansketest.dk`; override
 `MONITORING_RECIPIENT` only for local or test runs (set
 `SPRING_PROFILES_ACTIVE=local` for a local override).
+
+By default, monitoring sends to local Mailpit on `localhost:1025`. To test
+delivery through a real SMTP server, opt in explicitly with the `real-mail`
+profile and provide `MONITORING_RECIPIENT`, `SMTP_HOST`, `SMTP_PORT`,
+`SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_SENDER`, and the SMTP auth/STARTTLS
+settings through environment variables. A commented configuration template is
+also available in `monitoring-service/src/main/resources/application-real-mail.properties`.
+
+```bash
+SPRING_PROFILES_ACTIVE=real-mail \
+MONITORING_RECIPIENT=your.email@example.com \
+SMTP_HOST=smtp.example.com \
+SMTP_PORT=587 \
+SMTP_USERNAME=your.smtp.username \
+SMTP_PASSWORD='your-app-password' \
+SMTP_AUTH_ENABLED=true \
+SMTP_STARTTLS_ENABLED=true \
+SMTP_SENDER=monitoring@example.com \
+./gradlew bootRun
+```
+
+Do not commit real SMTP credentials. The fixed production recipient remains
+`pcr_monitoring@dansketest.dk`; `real-mail` is an explicit local/test delivery
+profile for verifying real SMTP delivery.
 
 Run its checks with `./gradlew check` from `monitoring-service/`.
 
