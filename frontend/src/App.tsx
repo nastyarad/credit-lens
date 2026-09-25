@@ -120,6 +120,7 @@ function App() {
   const [clientRequestId, setClientRequestId] = useState<string | null>(null);
   const [lastSubmission, setLastSubmission] = useState<Submission | null>(null);
   const pageTitleRef = useRef<HTMLHeadingElement>(null);
+  const activeRequestRef = useRef<AbortController | null>(null);
   const isSubmitting = state === "submitting";
   const title =
     detailsId
@@ -135,12 +136,27 @@ function App() {
       ? `Error: ${title} | Credit Lens`
       : `${title} | Credit Lens`;
   }, [error, title]);
+  useEffect(
+    () => () => {
+      activeRequestRef.current?.abort();
+    },
+    [],
+  );
+  function cancelActiveRequest() {
+    activeRequestRef.current?.abort();
+    activeRequestRef.current = null;
+  }
   function moveToSection(nextSection: "new" | "history") {
+    cancelActiveRequest();
     setSection(nextSection);
     setDetailsId(null);
+    setClientRequestId(null);
+    setLastSubmission(null);
     if (nextSection === "new") {
       setResult(null);
       setError(null);
+      setState("idle");
+    } else if (state === "submitting") {
       setState("idle");
     }
   }
@@ -148,6 +164,9 @@ function App() {
     personalIdentityCode: string,
     purpose: CreditRegisterExtractPurpose,
   ) {
+    cancelActiveRequest();
+    const controller = new AbortController();
+    activeRequestRef.current = controller;
     const canRetrySameRequest = Boolean(
       clientRequestId &&
         lastSubmission?.personalIdentityCode === personalIdentityCode &&
@@ -165,13 +184,25 @@ function App() {
         clientRequestId: requestId,
         personalIdentityCode,
         creditRegisterExtractPurposes: [purpose],
-      });
+      }, controller.signal);
+      if (
+        controller.signal.aborted ||
+        activeRequestRef.current !== controller
+      )
+        return;
+      activeRequestRef.current = null;
       setResult(response);
       setState("completed");
       setClientRequestId(null);
       setLastSubmission(null);
       requestAnimationFrame(() => pageTitleRef.current?.focus());
     } catch (requestError: unknown) {
+      if (
+        controller.signal.aborted ||
+        activeRequestRef.current !== controller
+      )
+        return;
+      activeRequestRef.current = null;
       const nextError = classifyError(requestError);
       setState(nextError.kind === "network" ? "network-error" : "api-error");
       setError(nextError);
@@ -179,6 +210,7 @@ function App() {
     }
   }
   function startNewRequest() {
+    cancelActiveRequest();
     setResult(null);
     setError(null);
     setClientRequestId(null);
@@ -277,49 +309,49 @@ function App() {
         </div>
         <main id="main-content" tabIndex={-1}>
           <div className="content">
-            <div className="page-head">
-              <div>
-                <h1 ref={pageTitleRef} tabIndex={-1}>
-                  {title}
-                </h1>
-                <p>
-                  {detailsId ? (
-                    "Review the immutable register snapshot for this financing request."
-                  ) : section === "history" ? (
-                    "Find successful register requests for one consumer. Failed requests are not stored."
-                  ) : state === "completed" && result ? (
-                    <>
-                      Consumer{" "}
-                      <strong>
-                        {result.consumer.maskedPersonalIdentityCode}
-                      </strong>{" "}
-                      · Extract created{" "}
-                      {new Intl.DateTimeFormat(undefined, {
-                        dateStyle: "medium",
-                        timeStyle: "short",
-                      }).format(
-                        new Date(
-                          result.creditExtractSummary.creationTimeUtc ||
-                            result.completedAt,
-                        ),
-                      )}
-                    </>
-                  ) : (
-                    "Retrieve a current register snapshot for a consumer financing assessment."
-                  )}
-                </p>
+            {!detailsId && (
+              <div className="page-head">
+                <div>
+                  <h1 ref={pageTitleRef} tabIndex={-1}>
+                    {title}
+                  </h1>
+                  <p>
+                    {section === "history" ? (
+                      "Find successful register requests for one consumer. Failed requests are not stored."
+                    ) : state === "completed" && result ? (
+                      <>
+                        Consumer{" "}
+                        <strong>
+                          {result.consumer.maskedPersonalIdentityCode}
+                        </strong>{" "}
+                        · Extract created{" "}
+                        {new Intl.DateTimeFormat(undefined, {
+                          dateStyle: "medium",
+                          timeStyle: "short",
+                        }).format(
+                          new Date(
+                            result.creditExtractSummary.creationTimeUtc ||
+                              result.completedAt,
+                          ),
+                        )}
+                      </>
+                    ) : (
+                      "Retrieve a current register snapshot for a consumer financing assessment."
+                    )}
+                  </p>
+                </div>
+                {state === "completed" && result && section === "new" && (
+                  <button
+                    className="secondary-button page-action"
+                    type="button"
+                    onClick={startNewRequest}
+                  >
+                    <Plus aria-hidden="true" />
+                    New request
+                  </button>
+                )}
               </div>
-              {state === "completed" && result && section === "new" && (
-                <button
-                  className="secondary-button page-action"
-                  type="button"
-                  onClick={startNewRequest}
-                >
-                  <Plus aria-hidden="true" />
-                  New request
-                </button>
-              )}
-            </div>
+            )}
             {detailsId ? (
               <FinancingRequestDetailsView id={detailsId} onBack={returnToHistory} />
             ) : section === "history" ? (

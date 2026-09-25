@@ -1,6 +1,9 @@
 import { ShieldAlert } from "lucide-react";
 import type { FinancingRequestResponse } from "../api/types";
-import { purposeLabels } from "./purposeLabels";
+import {
+  purposeLabels,
+  voluntaryCreditBanReasonLabels,
+} from "./purposeLabels";
 
 interface Props {
   result: FinancingRequestResponse;
@@ -45,7 +48,11 @@ export function FinancingRequestResult({ result }: Props) {
         {active && summary.voluntaryBanOnCredits.reason && (
           <div className="ban-reason">
             <span>Register reason</span>
-            <strong>{summary.voluntaryBanOnCredits.reason}</strong>
+            <strong>
+              {voluntaryCreditBanReasonLabels[
+                summary.voluntaryBanOnCredits.reason
+              ]}
+            </strong>
           </div>
         )}
       </section>

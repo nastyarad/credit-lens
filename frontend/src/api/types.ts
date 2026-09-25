@@ -56,9 +56,14 @@ export interface Consumer {
   maskedPersonalIdentityCode: string
 }
 
+export type VoluntaryCreditBanReason =
+  | 'RiskOfIdentityTheft'
+  | 'ControlOfPersonalFinances'
+  | 'Other'
+
 export interface VoluntaryBanOnCredits {
   isInEffect: boolean
-  reason: string | null
+  reason: VoluntaryCreditBanReason | null
 }
 
 export interface CreditExtractSummary {

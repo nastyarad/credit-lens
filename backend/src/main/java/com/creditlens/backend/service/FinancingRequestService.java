@@ -2,8 +2,8 @@ package com.creditlens.backend.service;
 
 import com.creditlens.backend.api.dto.CreateFinancingRequestRequest;
 import com.creditlens.backend.api.dto.CreateFinancingRequestResponse;
-import com.creditlens.backend.api.dto.GetFinancingRequestDetailsResponse;
 import com.creditlens.backend.api.dto.FinancingRequestHistoryItemDto;
+import com.creditlens.backend.api.dto.GetFinancingRequestDetailsResponse;
 import com.creditlens.backend.api.dto.SearchFinancingRequestsRequest;
 import com.creditlens.backend.api.dto.SearchFinancingRequestsResponse;
 import com.creditlens.backend.api.mapper.FinancingRequestResponseMapper;

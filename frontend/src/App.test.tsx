@@ -76,6 +76,36 @@ function problemResponse(status: number) {
     { status, headers: { "Content-Type": "application/problem+json" } },
   );
 }
+function detailsResponse() {
+  return new Response(
+    JSON.stringify({
+      id: "history-id",
+      clientRequestId: "history-client-id",
+      consumer: {
+        id: "consumer-id",
+        maskedPersonalIdentityCode: "******-123A",
+      },
+      creditRegisterExtractPurposes: ["NewConsumerCredit"],
+      requestedAt: "2026-09-18T10:15:29Z",
+      completedAt: "2026-09-18T10:15:30Z",
+      creditExtract: {
+        extractReference: "history-extract",
+        creationTimeUtc: "2026-09-18T10:15:30Z",
+        voluntaryBanOnCredits: { isInEffect: false, reason: null },
+        creditInformationSummary: {
+          lendersCount: 0,
+          loanContractsCount: 0,
+          guaranteedLoanContractsCount: 0,
+          repaymentsPaidLastAmount: [],
+          sumOfMonthlyLeasingInstalments: [],
+        },
+        loans: [],
+        incomeData: [],
+      },
+    }),
+    { status: 200 },
+  );
+}
 
 describe("Credit Lens workspace", () => {
   beforeEach(() =>
@@ -180,13 +210,62 @@ describe("Credit Lens workspace", () => {
     expect(second.personalIdentityCode).toBe(first.personalIdentityCode);
   });
 
+  it("ignores an abandoned request after navigating away", async () => {
+    const user = userEvent.setup();
+    let resolveFirstRequest!: (response: Response) => void;
+    const firstRequest = new Promise<Response>((resolve) => {
+      resolveFirstRequest = resolve;
+    });
+    const secondResponse = {
+      ...responseBody,
+      id: "second-request-id",
+      consumer: {
+        id: "second-consumer-id",
+        maskedPersonalIdentityCode: "******-456B",
+      },
+    };
+    const fetchMock = vi
+      .fn()
+      .mockImplementationOnce(() => firstRequest)
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify(secondResponse), { status: 201 }),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+    render(<App />);
+
+    await user.type(
+      screen.getByLabelText(/personal identity code/i),
+      "010190-123A",
+    );
+    await user.click(screen.getByRole("button", { name: "Request extract" }));
+    await user.click(screen.getByRole("button", { name: "Request history" }));
+    await user.click(screen.getByRole("button", { name: "New request" }));
+    await user.type(
+      screen.getByLabelText(/personal identity code/i),
+      "020290-456B",
+    );
+    await user.click(screen.getByRole("button", { name: "Request extract" }));
+
+    expect(await screen.findByText("******-456B")).toBeInTheDocument();
+    resolveFirstRequest(
+      new Response(JSON.stringify(responseBody), { status: 201 }),
+    );
+    await waitFor(() => {
+      expect(screen.getByText("******-456B")).toBeInTheDocument();
+      expect(screen.queryByText("******-123A")).not.toBeInTheDocument();
+    });
+  });
+
   it("puts an active ban first in the result", async () => {
     const user = userEvent.setup();
     const body = {
       ...responseBody,
       creditExtractSummary: {
         ...responseBody.creditExtractSummary,
-        voluntaryBanOnCredits: { isInEffect: true, reason: "Consumer request" },
+        voluntaryBanOnCredits: {
+          isInEffect: true,
+          reason: "ControlOfPersonalFinances",
+        },
       },
     };
     vi.stubGlobal(
@@ -203,7 +282,8 @@ describe("Credit Lens workspace", () => {
     await user.click(screen.getByRole("button", { name: "Request extract" }));
     const alert = await screen.findByRole("alert");
     expect(alert).toHaveTextContent("Active voluntary credit ban");
-    expect(alert).toHaveTextContent("Consumer request");
+    expect(alert).toHaveTextContent("Control of personal finances");
+    expect(alert).not.toHaveTextContent("ControlOfPersonalFinances");
     expect(
       screen.queryByText(/approved|declined|eligible/i),
     ).not.toBeInTheDocument();
@@ -303,6 +383,38 @@ describe("Credit Lens workspace", () => {
         name: `View details for extract ${extractReference}`,
       }),
     ).toBeInTheDocument();
+  });
+
+  it("uses one page-level heading on request details", async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValueOnce(historyResponse())
+        .mockResolvedValueOnce(detailsResponse()),
+    );
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: "Request history" }));
+    await user.type(
+      screen.getByLabelText(/personal identity code/i),
+      "010190-123A",
+    );
+    await user.click(
+      screen.getByRole("button", { name: "Search request history" }),
+    );
+    await user.click(
+      await screen.findByRole("button", {
+        name: "View details for extract history-extract",
+      }),
+    );
+
+    await screen.findByRole("heading", {
+      name: "Credit register extract",
+      level: 1,
+    });
+    expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
   });
 
   it("explains an empty history result", async () => {

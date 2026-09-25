@@ -838,6 +838,13 @@ td time {
   td[data-field="ban"] .mobile-label {
     display: inline;
   }
+  .details-panel td[data-label]::before {
+    content: attr(data-label);
+    flex: 0 0 42%;
+    color: var(--muted);
+    font-weight: 500;
+    text-align: left;
+  }
 }
 
 /* Financing request details */

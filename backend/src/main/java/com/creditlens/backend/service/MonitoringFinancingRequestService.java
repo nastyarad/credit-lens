@@ -21,7 +21,8 @@ public class MonitoringFinancingRequestService {
     this.financingRequestRepository = financingRequestRepository;
   }
 
-  public ListMonitoringFinancingRequestsResponse list(ListMonitoringFinancingRequestsRequest request) {
+  public ListMonitoringFinancingRequestsResponse list(
+      ListMonitoringFinancingRequestsRequest request) {
     Page<MonitoringFinancingRequestProjection> results =
         financingRequestRepository.findMonitoringFinancingRequests(
             request.completedFrom(),

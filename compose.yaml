@@ -1,6 +1,91 @@
 name: credit-lens
 
 services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: frontend
+    ports:
+      - "${FRONTEND_PORT:-5173}:8080"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:8080/"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: backend
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-credit_lens_backend}
+      DB_USER: ${POSTGRES_USER:-credit_lens}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-credit_lens}
+      PCR_BASE_URL: http://wiremock:8080
+      PCR_TARGET_ENVIRONMENT: ${PCR_TARGET_ENVIRONMENT:-Test}
+      PCR_OWNER_ID_CODE_TYPE: ${PCR_OWNER_ID_CODE_TYPE:-BusinessId}
+      PCR_OWNER_ID_CODE: ${PCR_OWNER_ID_CODE:-1234567-8}
+      PCR_OWNER_COUNTRY_CODE: ${PCR_OWNER_COUNTRY_CODE:-FI}
+      PCR_CONNECT_TIMEOUT: ${PCR_CONNECT_TIMEOUT:-2s}
+      PCR_READ_TIMEOUT: ${PCR_READ_TIMEOUT:-5s}
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      wiremock:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:8080/actuator/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 30s
+
+  monitoring-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: monitoring-service
+    environment:
+      MONITORING_DB_URL: jdbc:postgresql://monitoring-postgres:5432/${MONITORING_POSTGRES_DB:-credit_lens_monitoring}
+      MONITORING_DB_USER: ${MONITORING_POSTGRES_USER:-credit_lens_monitoring}
+      MONITORING_DB_PASSWORD: ${MONITORING_POSTGRES_PASSWORD:-credit_lens_monitoring}
+      BACKEND_BASE_URL: http://backend:8080
+      BACKEND_CONNECT_TIMEOUT: ${BACKEND_CONNECT_TIMEOUT:-2s}
+      BACKEND_READ_TIMEOUT: ${BACKEND_READ_TIMEOUT:-5s}
+      MONITORING_CRON: ${MONITORING_CRON:-0 */5 * * * *}
+      MONITORING_INITIAL_LOOKBACK: ${MONITORING_INITIAL_LOOKBACK:-PT5M}
+      MONITORING_RECIPIENT: ${MONITORING_RECIPIENT:-pcr_monitoring@dansketest.dk}
+      SMTP_HOST: mailpit
+      SMTP_PORT: 1025
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_AUTH_ENABLED: ${SMTP_AUTH_ENABLED:-false}
+      SMTP_STARTTLS_ENABLED: ${SMTP_STARTTLS_ENABLED:-false}
+      SMTP_SENDER: ${SMTP_SENDER:-credit-lens-monitoring@localhost}
+      SMTP_CONNECT_TIMEOUT: ${SMTP_CONNECT_TIMEOUT:-2000}
+      SMTP_READ_TIMEOUT: ${SMTP_READ_TIMEOUT:-5000}
+    depends_on:
+      monitoring-postgres:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+      mailpit:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "kill -0 1"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 45s
+
   postgres:
     image: postgres:17-alpine
     environment:
