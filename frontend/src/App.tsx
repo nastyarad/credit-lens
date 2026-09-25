@@ -352,11 +352,14 @@ function App() {
                 )}
               </div>
             )}
+            {section === "history" && (
+              <div hidden={Boolean(detailsId)}>
+                <FinancingRequestHistory onViewDetails={openDetails} />
+              </div>
+            )}
             {detailsId ? (
               <FinancingRequestDetailsView id={detailsId} onBack={returnToHistory} />
-            ) : section === "history" ? (
-              <FinancingRequestHistory onViewDetails={openDetails} />
-            ) : state === "completed" && result ? (
+            ) : section === "history" ? null : state === "completed" && result ? (
               <FinancingRequestResult result={result} />
             ) : (
               <>

@@ -417,6 +417,47 @@ describe("Credit Lens workspace", () => {
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
   });
 
+  it("returns from request details to the previously loaded history table", async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValueOnce(historyResponse())
+        .mockResolvedValueOnce(detailsResponse()),
+    );
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: "Request history" }));
+    await user.type(
+      screen.getByLabelText(/personal identity code/i),
+      "010190-123A",
+    );
+    await user.click(
+      screen.getByRole("button", { name: "Search request history" }),
+    );
+    await user.click(
+      await screen.findByRole("button", {
+        name: "View details for extract history-extract",
+      }),
+    );
+    await screen.findByRole("heading", {
+      name: "Credit register extract",
+      level: 1,
+    });
+
+    await user.click(
+      screen.getByRole("button", { name: /Back to request history/ }),
+    );
+
+    expect(
+      screen.getByRole("button", {
+        name: "View details for extract history-extract",
+      }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Successful requests for ******-123A")).toBeVisible();
+  });
+
   it("explains an empty history result", async () => {
     const user = userEvent.setup();
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(historyResponse([])));
