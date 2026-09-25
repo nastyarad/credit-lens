@@ -139,7 +139,7 @@ class MonitoringRunServiceTest {
         new MonitoringReportRenderer(),
         mail,
         new MonitoringProperties(
-            "0 */5 * * * *", Duration.ofMinutes(5), "pcr_monitoring@dansketest.dk"),
+            "0 * * * * *", Duration.ofMinutes(5), "pcr_monitoring@dansketest.dk"),
         Clock.fixed(NOW, ZoneOffset.UTC));
   }
 
