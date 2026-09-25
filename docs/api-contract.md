@@ -1,12 +1,26 @@
 # Credit Lens API contract
 
-Version: `v3`
-Base path: `/api/v1`
-Errors use `application/problem+json`.
+This document describes the current HTTP boundary for the frontend and the
+monitoring service. It is intended for API consumers, reviewers, and developers
+checking implementation behaviour.
+
+- Document revision: 3
+- HTTP API version: v1
+- Base path: `/api/v1`
+- Error media type: `application/problem+json`
+
+## Operations
+
+| Method and path | Request DTO | Response DTO | Purpose |
+| --- | --- | --- | --- |
+| `POST /api/v1/financing-requests` | `CreateFinancingRequestRequest` | `CreateFinancingRequestResponse` | Request and store one PCR extract |
+| `POST /api/v1/financing-requests/search` | `SearchFinancingRequestsRequest` | `SearchFinancingRequestsResponse` | Search successful history by identity code |
+| `GET /api/v1/financing-requests/{id}` | Path UUID | `GetFinancingRequestDetailsResponse` | Read one stored extract in full |
+| `GET /api/v1/monitoring/financing-requests` | `ListMonitoringFinancingRequestsRequest` | `ListMonitoringFinancingRequestsResponse` | List active-ban requests for monitoring |
 
 ## Create a financing request
 
-`POST /financing-requests`
+`POST /api/v1/financing-requests`
 
 ```json
 {
@@ -16,143 +30,147 @@ Errors use `application/problem+json`.
 }
 ```
 
-The backend first checks `clientRequestId`. A matching successful request is
-returned without another PCR call. A different personal identity code or
-purpose list returns `409 Conflict`.
+The backend calls the Positive Credit Register (PCR) synchronously and outside
+a database transaction. After a valid response, one short transaction stores
+the consumer, request, and immutable extract.
 
-For a new request, PCR is called synchronously without an open database
-transaction. Only after a valid response does one short transaction save the
-Consumer, FinancingRequest and immutable CreditExtract together.
+A new result returns `201 Created`, a `Location` header, and the response body.
+A repeated matching result returns `200 OK`. The response contains request
+identifiers, a masked consumer, purposes, timestamps, and an extract summary.
+It never contains the full identity code, status, error, or internal
+`newlyCreated` flag.
 
-New requests return `201 Created` and `Location`; repeated requests return
-`200 OK`. The internal `newlyCreated` flag is used only for that status choice
-and is never serialized.
+### Idempotency
 
-```json
-{
-  "id": "d46c2b84-d979-43e2-b0e4-bc7de12d2454",
-  "clientRequestId": "ec2364ec-b4ed-4af7-805c-2bd44c42b9d5",
-  "consumer": {
-    "id": "d2fbb47f-2317-4740-8fa5-50f73b64182d",
-    "maskedPersonalIdentityCode": "******-123A"
-  },
-  "creditRegisterExtractPurposes": ["NewConsumerCredit"],
-  "requestedAt": "2026-09-18T10:15:29Z",
-  "completedAt": "2026-09-18T10:15:30Z",
-  "creditExtractSummary": {
-    "extractReference": "2fdc1e0b-91d8-4d7c-9d4c-82df9c3b2a10",
-    "creationTimeUtc": "2026-09-18T10:15:30Z",
-    "voluntaryBanOnCredits": {"isInEffect": false, "reason": null},
-    "lendersCount": 0,
-    "loanContractsCount": 0,
-    "guaranteedLoanContractsCount": 0
-  }
-}
-```
+Reusing `clientRequestId` returns an already persisted matching result without
+another PCR call. It does not guarantee exactly-once PCR execution when the
+first call fails, times out, or overlaps with another call.
 
-The create response never contains `status`, `error`, a full personal identity
-code, or `newlyCreated`.
+The same ID with a different personal identity code or purpose list returns
+`409 Conflict`. The backend does not reserve an ID before calling PCR.
 
-## PCR errors
+### PCR failures
 
-No request, consumer or extract is persisted when PCR fails. The failure is
-returned as a problem detail and never appears in history:
+No consumer, request, or extract is persisted when PCR fails.
 
 | PCR condition | HTTP status |
 | --- | ---: |
-| timeout | 504 |
-| connection failure or unavailable service | 502 or 503 |
-| invalid response | 502 |
-| rejected/validation request | 422 or 502 |
+| Timeout | `504 Gateway Timeout` |
+| Upstream rejection | `422 Unprocessable Content` |
+| Unavailable service or connection failure | `502 Bad Gateway` |
+| Invalid upstream response | `502 Bad Gateway` |
 
-Problem details contain a safe generic detail, correlation ID and no upstream
+The response uses a generic safe detail. It does not expose the upstream
 payload or personal identity code.
 
-## History and details
+## Search request history
 
-History and details expose only successfully persisted PCR fetches. Their
-models contain `requestedAt`, `completedAt`, masked identity data and the
-immutable extract; they do not contain status or error fields. An extract's
-presence is the success indicator.
+`POST /api/v1/financing-requests/search`
 
-`POST /financing-requests/search` accepts a `SearchFinancingRequestsRequest` and searches history by a
-`personalIdentityCode` supplied only in the request body:
+The identity code stays in the request body and never appears in a URL. `page`
+defaults to `0`; `size` defaults to `20` and accepts `1..100`.
 
 ```json
-{"personalIdentityCode":"010190-123A","page":0,"size":20}
+{
+  "personalIdentityCode": "010190-123A",
+  "page": 0,
+  "size": 20
+}
 ```
 
-`page` defaults to `0`; `size` defaults to `20` and accepts values from `1`
-through `100`. The response is a `SearchFinancingRequestsResponse` with history
-items, ordered by
-`requestedAt DESC, id DESC` and paginated by the database. An unknown consumer
-returns an empty page. Only requests with an associated `credit_extract` are
-included. The response contains masked identity data and no status or error
-fields.
-
-`GET /api/v1/financing-requests/{id}` returns a `GetFinancingRequestDetailsResponse` with the complete details of one successfully
-saved financing request, including its one immutable credit extract. The
-endpoint never calls PCR and returns no status, error, newlyCreated or full
-personal identity code.
-
-For an existing request it returns `200 OK` with the request fields and the
-complete `creditExtract`, including summary amounts, loans and income data. A
-malformed UUID returns `400 Bad Request`; an unknown UUID returns `404 Not
-Found`. Both errors use `application/problem+json` and a correlation ID in the
-response header and body. A missing extract for an existing request is an
-internal invariant violation, not a not-found response.
-
-## Monitoring
-
-`GET /api/v1/monitoring/financing-requests?completedFrom=...&completedTo=...&page=...&size=...`
-
-The required `completedFrom` and `completedTo` parameters use ISO-8601
-timestamps compatible with `Instant`. `completedFrom` is inclusive and
-`completedTo` is exclusive, so the interval is `[completedFrom, completedTo)`.
-`page` is an optional zero-based page number defaulting to `0`. `size` is an
-optional page size defaulting to `100`, with allowed values from `1` through
-`500`.
-
-The endpoint accepts a `ListMonitoringFinancingRequestsRequest`. Results are sorted stably by
-`completedAt ASC, financingRequestId ASC` and return a `ListMonitoringFinancingRequestsResponse`
-with the following operation response shape:
+Results include only requests joined to a stored extract. They are ordered by
+`requestedAt DESC, id DESC`. An unknown consumer returns an empty page.
 
 ```json
 {
   "items": [
     {
-      "financingRequestId": "d46c2b84-d979-43e2-b0e4-bc7de12d2454",
-      "extractReference": "2fdc1e0b-91d8-4d7c-9d4c-82df9c3b2a10",
-      "requestedAt": "2026-09-18T10:04:40Z",
-      "completedAt": "2026-09-18T10:04:42Z",
+      "id": "d46c2b84-d979-43e2-b0e4-bc7de12d2454",
+      "clientRequestId": "ec2364ec-b4ed-4af7-805c-2bd44c42b9d5",
       "maskedPersonalIdentityCode": "******-123A",
-      "voluntaryCreditBanReason": "ControlOfPersonalFinances",
-      "lendersCount": 2,
-      "loanContractsCount": 3,
-      "guaranteedLoanContractsCount": 0
+      "requestedAt": "2026-09-18T10:15:29Z",
+      "completedAt": "2026-09-18T10:15:30Z",
+      "extractReference": "2fdc1e0b-91d8-4d7c-9d4c-82df9c3b2a10",
+      "voluntaryCreditBanActive": false
     }
   ],
   "page": 0,
-  "size": 100,
+  "size": 20,
   "totalItems": 1,
   "totalPages": 1
 }
 ```
 
-When there are no matching requests, the endpoint returns `200 OK` with
-`items: []`, `totalItems: 0` and `totalPages: 0`. Requests with a missing or
-malformed timestamp, an empty or reversed interval, a negative page, or a size
-outside `1..500` return `400 Bad Request` as `application/problem+json` with a
-correlation ID in both the response header and body.
+## Get request details
 
-Monitoring queries use `completed_at`, an inner join to the existing
-`credit_extract` table and `voluntary_ban_active = TRUE`; they do not filter by
-a financing-request status because no such status exists. The response only
-contains a masked personal identity code and never contains the full value.
-This endpoint is exclusively an integration boundary for the separate
-monitoring service. It is not called by the frontend and does not provide a
-dashboard, report preview, or end-user monitoring capability.
+`GET /api/v1/financing-requests/{id}`
 
-## Sequence
+This operation reads a stored result and never calls PCR. Its response has the
+following shape:
 
-![Credit Lens request sequence](images/sequence.svg)
+| Field | Content |
+| --- | --- |
+| `id`, `clientRequestId` | Request identifiers |
+| `consumer` | Consumer ID and masked identity code |
+| `creditRegisterExtractPurposes` | One or more purposes |
+| `requestedAt`, `completedAt` | Request timing |
+| `creditExtract` | Reference, creation time, ban, summary, loans, and income data |
+
+`creditExtract.creditInformationSummary` contains the three counts plus
+repayment and monthly leasing currency totals. Each loan can contain collateral,
+payment-plan, subtype, and delayed-amount data.
+
+A malformed UUID returns `400 Bad Request`. An unknown UUID returns `404 Not
+Found`. A request without an extract is an internal invariant violation, not a
+not-found result.
+
+## List requests for monitoring
+
+`GET /api/v1/monitoring/financing-requests`
+
+Required query parameters `completedFrom` and `completedTo` are ISO-8601
+instants. The interval is half-open: `[completedFrom, completedTo)`. `page`
+defaults to `0`; `size` defaults to `100` and accepts `1..500`.
+
+Example:
+
+```text
+/api/v1/monitoring/financing-requests?completedFrom=2026-09-18T10:00:00Z&completedTo=2026-09-18T10:05:00Z&page=0&size=100
+```
+
+Results include only stored extracts with `voluntary_ban_active = TRUE`. They
+are ordered by `completedAt ASC, financingRequestId ASC`. Each item contains
+request and extract references, timestamps, the masked identity code, ban
+reason, and the three summary counts.
+
+An empty result is `200 OK` with `items: []`, `totalItems: 0`, and
+`totalPages: 0`. This endpoint is an integration boundary for the monitoring
+service; the frontend does not call it.
+
+## Validation summary
+
+| Input | Rule |
+| --- | --- |
+| `clientRequestId` | Required UUID |
+| `personalIdentityCode` | Required supported format; full Finnish checksum validation is not implemented |
+| `creditRegisterExtractPurposes` | Non-empty list of known enum values |
+| History `page` / `size` | `page >= 0`; `size` in `1..100` |
+| Detail `id` | UUID path value |
+| Monitoring interval | Both timestamps required; `completedFrom < completedTo` |
+| Monitoring `page` / `size` | `page >= 0`; `size` in `1..500` |
+
+Invalid JSON, enum values, formats, pagination, timestamps, or intervals return
+`400 Bad Request`.
+
+## Problem details
+
+Errors have these fields: `type`, `title`, `status`, `detail`, `instance`, and
+`correlationId`. The same correlation ID is returned in the
+`X-Correlation-Id` header. An invalid supplied correlation ID is replaced.
+
+Error content is generic by design. Responses never echo the personal identity
+code or raw PCR response.
+
+## Create sequence
+
+![Credit Lens create-request sequence](images/sequence.svg)

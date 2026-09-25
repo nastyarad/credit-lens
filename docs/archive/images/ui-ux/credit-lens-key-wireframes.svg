@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="760" viewBox="0 0 1200 760" role="img" aria-labelledby="t d">
-  <title id="t">Credit Lens key screen wireframes</title><desc id="d">Desktop new request and active voluntary credit ban result, plus a mobile result summary.</desc>
+  <title id="t">Historical Credit Lens key screen wireframes</title><desc id="d">Superseded desktop new request and active voluntary credit ban result, plus a mobile result summary.</desc>
   <style>text{font-family:Arial,sans-serif;fill:#17212b}.m{font-size:12px;fill:#52606d}.l{font-size:14px}.h{font-size:22px;font-weight:700}.s{font-size:11px;font-weight:700;letter-spacing:1px;fill:#52606d}.box{fill:#fff;stroke:#d0d5dd}.nav{fill:#17212b}.white{fill:#fff}.red{fill:#b42318}.blue{fill:#155eef}.muted{fill:#f2f4f7}.alert{fill:#fef3f2;stroke:#fecdca}</style>
   <rect width="1200" height="760" fill="#f7f8fa"/>
   <text x="40" y="38" class="s">A · NEW REQUEST / DESKTOP</text>

@@ -1,28 +1,32 @@
 # Credit Lens frontend
 
-React and TypeScript frontend for Credit Lens, built with Vite.
+This directory contains the React and TypeScript user interface. It supports
+new requests, successful request history, and stored extract details.
 
-## Requirements
+## Prerequisites
 
 - Node.js 22.12 or newer
 - npm 11 or newer
+- Credit Lens backend available at `http://localhost:8080`
+
+The Vite development server proxies `/api` to the backend.
 
 ## Development
 
-Install dependencies and start the development server:
-
 ```bash
-npm install
+npm ci
 npm run dev
 ```
 
-The app is available at `http://localhost:5173`. During local development,
-requests under `/api` are proxied to the Spring Boot backend at
-`http://localhost:8080`.
+Open `http://localhost:5173`.
 
 ## Checks
 
 ```bash
 npm run lint
+npm test
 npm run build
 ```
+
+For the complete Docker Compose startup and demo, use the repository
+[README](../README.md).

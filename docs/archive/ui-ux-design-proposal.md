@@ -1,6 +1,10 @@
-# Credit Lens — UI/UX design proposal
+# Historical Credit Lens UI/UX design proposal
 
-_Version 1.0 · 20 September 2026 · design discovery for the current POC_
+> Superseded: this proposal predates the implemented detail view and other UI
+> changes. It is retained as design history. Use
+> [`../ui-guidelines.md`](../ui-guidelines.md) for current guidance.
+
+_Version 1.0 · 20 September 2026 · design discovery for the current PoC_
 
 ## 1. Executive summary
 
@@ -8,7 +12,7 @@ Credit Lens is a narrow B2B workspace for an employee of a lender to request and
 
 The recommended direction is **a compact operational banking workspace**: a persistent, low-noise shell; a short request form; and a request detail view that makes the extract's provenance, the active voluntary credit ban, and the few currently available facts immediately legible. It deliberately does **not** present a credit decision, approval, score, case status, or monitoring dashboard.
 
-The largest implementation constraint is not visual. The backend persists a much richer immutable extract (loans, delayed amounts, repayment/leasing amounts and income) than the create and history API expose. The proposal makes a useful POC from the current contract, while clearly reserving the detailed extract for a separate, privacy-reviewed API addition.
+The largest implementation constraint is not visual. The backend persists a much richer immutable extract (loans, delayed amounts, repayment/leasing amounts and income) than the create and history API expose. The proposal makes a useful PoC from the current contract, while clearly reserving the detailed extract for a separate, privacy-reviewed API addition.
 
 ![Three key proposed layouts](images/ui-ux/credit-lens-key-wireframes.svg)
 
@@ -63,17 +67,17 @@ Review basis: source inspection of `frontend/src`, the API client/types, backend
 | `clientRequestId` idempotency | Retrying a technical failure in the active tab reuses the same ID and input/purpose. Conflict explains that an identical successful request exists or inputs differ; never put its PIN in copy. |
 | PIN is sensitive | Full code only in the create/search input. Clear it after submission/search; no URL query, title, breadcrumb, toast, error, telemetry label, report preview or copied reference contains it. |
 | Active voluntary ban | A high-priority factual signal, not an approval/decline. Pair icon, heading, text and placement; reason only when returned. |
-| Monitoring is backend-to-backend | No “Monitoring” navigation, settings, alert count or email history in this POC UI. |
+| Monitoring is backend-to-backend | No “Monitoring” navigation, settings, alert count or email history in this PoC UI. |
 
 ## 5. Competitive and pattern research
 
-The table distinguishes a directly observed/publicly documented pattern from an inference for this POC. These are pattern references, not visual templates.
+The table distinguishes a directly observed/publicly documented pattern from an inference for this PoC. These are pattern references, not visual templates.
 
 | Reference | Confirmed public observation | Applicable pattern | Transfer limit |
 | --- | --- | --- | --- |
 | [Finnish Positive Credit Register — voluntary ban](https://www.vero.fi/en/positivecreditregister/for-private-individuals/voluntary-ban-on-credits/) | A ban is visible on the extract and lenders must exercise extra care; it does not affect existing credit. | Give the ban first-position, factual prominence and avoid auto-decision language. | The page is a consumer information service, not an assessor UI. |
 | [PCR API description](https://www.vero.fi/globalassets/pore/dokumentaatio-2026/requesting-a-credit-register-extract---api-description_2.1.pdf) | The register responds with credit/income data and ban information. | Source/time/reference afford traceable interpretation. | Credit Lens intentionally maps only a subset; do not expose raw PCR fields absent from the domain/API. |
-| [nCino platform](https://www.ncino.com/our-platform) | It describes lending through origination, underwriting, pricing, compliance and monitoring, with workflow views. | Persistent task context and progressive disclosure are useful. | Do not import its lifecycle, approvals, checklists or portfolio dashboard into the POC. |
+| [nCino platform](https://www.ncino.com/our-platform) | It describes lending through origination, underwriting, pricing, compliance and monitoring, with workflow views. | Persistent task context and progressive disclosure are useful. | Do not import its lifecycle, approvals, checklists or portfolio dashboard into the PoC. |
 | [Experian PowerCurve Originations](https://www.experian.com.au/business/solutions/ascend-platform/decisioning-ascend) | It combines application, data, policy, workflow and decision capabilities. | Separate source facts from decision/policy results in the interface. | Credit Lens has only source facts; no score, policy, eligibility or decision UI. |
 | [Finastra Fusion Essence overview](https://www.finastra.com/sites/default/files/file/2021-11/resource-fusion-essence-end-to-end-lending-capabilities.pdf) | A broad lending system includes servicing, arrears, authorisation and operational reporting. | Dense information should be sectioned by decision relevance rather than decorated. | Those modules are out of scope. |
 | [Experian credit report guide](https://gateway.secure.experian.com/bizapps/pdf/AAUserGuide.pdf) | The documented customer view groups customer data, risk information and influencing factors. | A stable summary before detail helps triage a long report. | Do not infer or invent a risk score/factors for PCR. |
@@ -85,7 +89,7 @@ The table distinguishes a directly observed/publicly documented pattern from an 
 1. A register extract should be read as a **source snapshot**; provenance and timestamp are first-class facts.
 2. High-risk exceptions deserve a dedicated region before normal summary data; colour is supplemental.
 3. The right progressive disclosure is summary → detail, not a dashboard of invented KPIs.
-4. A POC should retain one focused workspace and history, while leaving workflow, policies and monitoring out.
+4. A PoC should retain one focused workspace and history, while leaving workflow, policies and monitoring out.
 
 ## 6. User journeys and Jobs to Be Done
 
@@ -170,7 +174,7 @@ No global search, dashboard, monitoring, consumer profile, approval queue, audit
 
 ### 9.9 Request/extract detail
 
-**Goal:** inspect a saved immutable extract progressively. **Layout:** top provenance and ban banner; section navigation/accordions in this order: Summary; Repayments & leasing; Loans; Delayed amounts; Income. Tables are semantic with currency/date formatting; collapsed sections announce count. **Actions:** Back to history, copy extract reference (optional). **Mobile:** ban/provenance stay above accordion; table becomes key/value rows with no hidden financial amount. **Data now:** unavailable from public API. **Domain exists:** all listed data in `CreditExtract` / `CreditExtractData`. **Required:** `GET /financing-requests/{id}` (or equivalent) with a named `GetFinancingRequestResponse`; its response must contain only masked PIN and defined detail fields, and 404/403-safe errors.
+**Goal:** inspect a saved immutable extract progressively. **Layout:** top provenance and ban banner; section navigation/accordions in this order: Summary; Repayments & leasing; Loans; Delayed amounts; Income. Tables are semantic with currency/date formatting; collapsed sections announce count. **Actions:** Back to history, copy extract reference (optional). **Mobile:** ban/provenance stay above accordion; table becomes key/value rows with no hidden financial amount. **Historical note:** this section predates the implemented detail API and UI. The current operation uses `GetFinancingRequestDetailsResponse` and returns only masked identity data.
 
 ## 12. Wireframes for key screens
 
@@ -182,7 +186,7 @@ The three SVG artifacts are deliberately low-fidelity: they document hierarchy a
 
 | Element | Recommendation |
 | --- | --- |
-| Foundations | Light neutral `#F7F8FA` canvas, white surfaces, ink `#17212B`, secondary `#52606D`; no gradient background. Dark mode is optional, not a POC requirement. |
+| Foundations | Light neutral `#F7F8FA` canvas, white surfaces, ink `#17212B`, secondary `#52606D`; no gradient background. Dark mode is optional, not a PoC requirement. |
 | Semantic colour | Action/info `#155EEF`; success/source-confirmed `#067647`; attention `#B54708`; critical ban `#B42318`; focus `#175CD3`. Meet 4.5:1 for text; always pair colour with text/icon. |
 | Typography | Inter/system fallback; 16px base; 12/14 metadata; 16 body; 18 section; 24 page; 32 only for desktop page title. Use tabular numerals for dates, monetary values and counts. |
 | Spacing/grid | 4px base; 8/12/16/24/32/48 scale. Desktop max 1280px, 12 columns, 24px gutter; tablet 8 columns; mobile 4 columns with 16px gutters. |
@@ -227,24 +231,24 @@ The three SVG artifacts are deliberately low-fidelity: they document hierarchy a
 | Open saved request | No GET endpoint | Yes | Add named operation DTO and detail endpoint. |
 | Loans, collateral, delayed amounts, repayment/leasing, income | No | Yes: `CreditExtractData` | Detail response (with pagination/sectioning decisions) and privacy review. |
 | Ban validity/consent | No | No | PCR/domain/API scope change; do not design as present. |
-| User/decision/policy state | No | No | Explicitly out of POC scope; would be a separate product/domain expansion. |
+| User/decision/policy state | No | No | Explicitly out of PoC scope; would be a separate product/domain expansion. |
 
-## 16. MVP scope for the POC
+## 16. MVP scope for the PoC
 
 **Implement now (no contract change):** compact shell; request form and help; input/error summary; clear PIN; synchronous waiting; differentiated safe failures with same-tab retry; ban alert; result summary/provenance; responsive history table/cards; empty/pagination; privacy/a11y checks.
 
 **Next only after API agreement:** history purpose, request/extract detail endpoint, full-detail disclosure sections.
 
-## 17. Possible improvements after the POC
+## 17. Possible improvements after the PoC
 
-Authenticated roles and case linking; access/audit trail; decision policy integration; data retention controls; user-configured locale/timezone; monitoring administration; a review/approval workflow. None should be visually implied by the POC.
+Authenticated roles and case linking; access/audit trail; decision policy integration; data retention controls; user-configured locale/timezone; monitoring administration; a review/approval workflow. None should be visually implied by the PoC.
 
 ## 18. Open questions and assumptions
 
 1. Who exactly is the primary user, their role, language, device and frequency of use? This determines whether the compact direction needs a novice mode.
 2. What operational action does a lender take after an active voluntary ban, and what wording is legally approved? The UI can signal care, not prescribe a decision.
 3. Is `voluntaryBanOnCredits.reason` safe and consistently populated for all active bans? If not, render it conditionally.
-4. Does the product owner want full extract detail in the POC? If yes, approve the detail endpoint and exact response shape before frontend work.
+4. Does the product owner want full extract detail in the PoC? If yes, approve the detail endpoint and exact response shape before frontend work.
 5. Are extract reference and client request ID intended for copy/support usage, and which one is safe/meaningful to show in history?
 6. What locale/timezone and number-format conventions apply to the lender's staff?
 7. What exact safe error taxonomy and retry guidance will the backend guarantee beyond HTTP status/problem detail?

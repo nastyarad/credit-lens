@@ -1,307 +1,185 @@
 # Credit Lens
 
-Credit Lens is a proof-of-concept system for requesting Finnish Positive
-Credit Register extracts, viewing request history and reporting financing
-requests made for consumers with an active voluntary credit ban.
+Credit Lens is a working proof of concept (PoC) for requesting Finnish
+Positive Credit Register (PCR) extracts, reviewing successful request history
+and details, and reporting financing requests for consumers with an active
+voluntary credit ban.
 
-## Current status
+The repository contains three applications: a React frontend, a Spring Boot
+backend, and a scheduled Spring Boot monitoring service. PostgreSQL, WireMock,
+and Mailpit support the local environment.
 
-The repository contains a Spring Boot backend, a separate Spring Boot
-monitoring service, service-owned PostgreSQL schemas with Flyway migrations,
-local WireMock and Mailpit support, and a React/TypeScript frontend bootstrap.
+## Prerequisites
 
-## Local frontend
+For the complete local deployment, install Docker with Docker Compose. Manual
+development also requires Java 21, Node.js 22.12 or newer, and npm 11 or newer.
 
-Requirements: Node.js 22.12 or newer and npm 11 or newer.
+## Quick start
 
-Start the Vite development server from the repository root:
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-Open `http://localhost:5173`. Requests under `/api` are proxied to the backend
-at `http://localhost:8080` during local development.
-
-## Local backend and monitoring environment
-
-Requirements: Docker with Compose and Java 21.
-
-Start PostgreSQL from the repository root:
+From the repository root, build and start the complete PoC:
 
 ```bash
-docker compose up -d postgres
+docker compose up --build
 ```
 
-Start the local PCR 2.1 WireMock together with PostgreSQL:
+Open these local endpoints:
+
+| Service | URL |
+| --- | --- |
+| Frontend | `http://localhost:5173` |
+| Backend health | `http://localhost:8080/actuator/health` |
+| Mailpit inbox | `http://localhost:8025` |
+| PCR WireMock | `http://localhost:8081` |
+
+Compose keeps data in named PostgreSQL volumes. Stop the environment without
+deleting those volumes:
 
 ```bash
-docker compose up -d postgres wiremock
+docker compose down
 ```
 
-WireMock listens on `http://localhost:8081` and emulates
-`POST /GetCreditRegisterExtract`. The backend HTTP adapter is configured with
-`PCR_BASE_URL`, `PCR_TARGET_ENVIRONMENT`, `PCR_OWNER_ID_CODE_TYPE`,
-`PCR_OWNER_ID_CODE`, `PCR_OWNER_COUNTRY_CODE`, `PCR_CONNECT_TIMEOUT` and
-`PCR_READ_TIMEOUT` (see `.env.example`). The mock does not implement mTLS or
-certificate authentication; those are required by the real PCR service.
+See [development guidance](docs/development.md) for manual startup,
+configuration, fixtures, seed data, real SMTP, and troubleshooting.
 
-Example request through Credit Lens:
+## Five-minute demo
+
+1. Open `http://localhost:5173` and start a new request.
+2. Use identity code `070790-123A` and any listed purpose. WireMock returns an
+   extract with an active `ControlOfPersonalFinances` voluntary ban.
+3. Open **Request history**, search for the same identity code, and view the
+   saved extract details.
+4. Wait for the five-minute monitoring schedule, then open Mailpit at
+   `http://localhost:8025` and inspect the report.
+5. Open `http://localhost:8080/actuator/health` and confirm the backend reports
+   `UP`.
+
+Mailpit captures mail addressed to `pcr_monitoring@dansketest.dk` inside the
+local environment. It does not deliver the message to an external mailbox.
+
+The same create flow can be called directly. Generate a fresh request ID for
+each different input:
 
 ```bash
 curl -X POST http://localhost:8080/api/v1/financing-requests \
   -H 'Content-Type: application/json' \
-  -d '{"clientRequestId":"ec2364ec-b4ed-4af7-805c-2bd44c42b9d5","personalIdentityCode":"010190-123A","creditRegisterExtractPurposes":["NewConsumerCredit"]}'
+  -d "{\"clientRequestId\":\"$(uuidgen | tr '[:upper:]' '[:lower:]')\",\"personalIdentityCode\":\"070790-123A\",\"creditRegisterExtractPurposes\":[\"NewConsumerCredit\"]}"
 ```
-
-The WireMock identity-code scenarios are deterministic:
-
-| Identity code | Scenario |
-| --- | --- |
-| `010190-123A` | Full successful extract, no voluntary ban |
-| `020290-123A` | Successful extract with active `RiskOfIdentityTheft` ban |
-| `070790-123A` | Successful extract with active `ControlOfPersonalFinances` ban |
-| `080890-123A` | Successful extract with active `Other` voluntary ban |
-| `030390-123A` | PCR-shaped HTTP 400 rejection |
-| `040490-123A` | HTTP 503 unavailable |
-| `050590-123A` | HTTP 200 with missing extract |
-| `060690-123A` | Fixed delay beyond the default read timeout |
-
-Unknown identity codes use the PCR-shaped `E20` HTTP 400 fallback. Fixtures
-are under `wiremock/mappings` and `wiremock/__files`.
-
-Then start the backend. Flyway applies the database migration automatically:
-
-```bash
-cd backend
-./gradlew bootRun
-```
-
-The local defaults are database `credit_lens_backend`, user `credit_lens`,
-password `credit_lens` and port `5432`. To override the Docker settings, copy
-`.env.example` to `.env`. Supply matching backend settings with `DB_URL`,
-`DB_USER` and `DB_PASSWORD`.
-
-Check the container or stop it while preserving data:
-
-```bash
-docker compose ps
-docker compose down
-```
-
-To intentionally remove the local database data as well, run
-`docker compose down --volumes`.
-
-Run the backend tests with `./gradlew test` from `backend/`. The database
-integration test starts a disposable PostgreSQL container and verifies that
-Flyway applies the schema successfully.
-
-Start the monitoring database and Mailpit (SMTP on `1025`, web UI on
-`http://localhost:8025`) from the repository root:
-
-```bash
-docker compose up -d monitoring-postgres mailpit
-```
-
-Then, with the backend running on port `8080`, start the independently built
-monitoring service. It has no frontend endpoint and only calls the backend
-monitoring API.
-
-```bash
-cd monitoring-service
-./gradlew bootRun
-```
-
-Its local defaults are database `credit_lens_monitoring`, user and password
-`credit_lens_monitoring`, port `5433`, backend `http://localhost:8080`, and
-Mailpit. Configuration is supplied through `BACKEND_BASE_URL`,
-`BACKEND_CONNECT_TIMEOUT`, `BACKEND_READ_TIMEOUT`, `MONITORING_DB_URL`,
-`MONITORING_DB_USER`, `MONITORING_DB_PASSWORD`, `MONITORING_CRON`,
-`MONITORING_INITIAL_LOOKBACK`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`,
-`SMTP_PASSWORD`, `SMTP_AUTH_ENABLED`, `SMTP_STARTTLS_ENABLED`, and
-`SMTP_SENDER`. The fixed recipient is `pcr_monitoring@dansketest.dk`; override
-`MONITORING_RECIPIENT` only for local or test runs (set
-`SPRING_PROFILES_ACTIVE=local` for a local override).
-
-By default, monitoring sends to local Mailpit on `localhost:1025`. To test
-delivery through a real SMTP server, opt in explicitly with the `real-mail`
-profile and provide `MONITORING_RECIPIENT`, `SMTP_HOST`, `SMTP_PORT`,
-`SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_SENDER`, and the SMTP auth/STARTTLS
-settings through environment variables. A commented configuration template is
-also available in `monitoring-service/src/main/resources/application-real-mail.properties`.
-
-```bash
-SPRING_PROFILES_ACTIVE=real-mail \
-MONITORING_RECIPIENT=your.email@example.com \
-SMTP_HOST=smtp.example.com \
-SMTP_PORT=587 \
-SMTP_USERNAME=your.smtp.username \
-SMTP_PASSWORD='your-app-password' \
-SMTP_AUTH_ENABLED=true \
-SMTP_STARTTLS_ENABLED=true \
-SMTP_SENDER=monitoring@example.com \
-./gradlew bootRun
-```
-
-Do not commit real SMTP credentials. The fixed production recipient remains
-`pcr_monitoring@dansketest.dk`; `real-mail` is an explicit local/test delivery
-profile for verifying real SMTP delivery.
-
-Run its checks with `./gradlew check` from `monitoring-service/`.
 
 ## Assignment coverage
 
-The planned solution covers the three required components:
-
-- a frontend where a user starts a request and views history and details;
-- a backend that calls a mocked Positive Credit Register API and stores the
-  results;
-- a monitoring service that periodically finds completed requests with an
-  active voluntary credit ban and sends an immutable email report to
-  `pcr_monitoring@dansketest.dk`.
+| Status | Requirement | Evidence |
+| --- | --- | --- |
+| Implemented | Request a PCR extract | Frontend form, backend API, synchronous WireMock integration |
+| Implemented | View request history and details | Paginated history and immutable extract detail views |
+| Implemented | Persist relevant data | Backend-owned PostgreSQL schema and Flyway migration |
+| Implemented | Report active voluntary bans | Scheduled monitoring, persisted reports, SMTP delivery retry |
+| Implemented | Illustrate errors and resilience | Validation, safe problem details, timeouts, PCR failure fixtures, retry paths |
+| Implemented | Local setup and deployment | Multi-stage images and Docker Compose |
+| Not included | Public or production hosting | Local PoC deployment only |
+| Not included | Authentication, authorization, encryption, and retention controls | Required before production use |
+| Not included | Automated browser-to-email end-to-end test | The full Compose happy path is manual |
+| Optional | Five-minute walkthrough video | Not stored in this repository |
 
 ## Architecture
 
 ![Credit Lens architecture](docs/images/architecture.svg)
 
-The monitoring service uses the backend API and never reads the backend
-database directly. Each service owns its data. The monitoring endpoint is for
-the monitoring service only: there is no frontend navigation, dashboard,
-report preview, or user-facing monitoring API.
+The frontend calls the backend under `/api`. The backend owns consumers,
+financing requests, and immutable credit extracts. It calls PCR synchronously
+outside a database transaction and persists a valid result in one short final
+transaction.
 
-## Target technology
+The monitoring service calls the backend monitoring API; it never reads the
+backend database. It stores immutable report content in its own database and
+sends it through SMTP. Failed delivery is retried from the stored report.
 
-| Component | Planned technology | Responsibility |
-| --- | --- | --- |
-| Frontend | React and TypeScript | Start requests and display history and details |
-| Backend | Java 21 and Spring Boot | Own consumers, financing requests and credit extracts |
-| Monitoring service | Java 21 and Spring Boot | Build reports and retry email delivery |
-| Persistence | PostgreSQL and Flyway | Service-owned data and schema migrations |
-| Register mock | WireMock | Documentation-based PCR responses and failures |
-| Email | Mailpit or test SMTP adapter | Local email delivery and inspection |
-| Local environment | Docker Compose | Start the complete PoC |
+## Verification
 
-Library choices may be adjusted during implementation without changing the
-service boundaries or domain contracts.
+Run component checks from their directories:
 
-## Main flow
+```bash
+cd frontend
+npm ci
+npm run lint
+npm test
+npm run build
+```
 
-### Request and view a credit extract
+```bash
+cd backend
+./gradlew check
+```
 
-1. The frontend assigns a `clientRequestId` to one user submission.
-2. The backend validates the request and checks for an existing successful
-   request with that ID.
-3. For a new request, it calls the register mock synchronously without an open
-   database transaction.
-4. After a valid response, one short transaction stores Consumer,
-   FinancingRequest and immutable CreditExtract.
-5. A PCR error returns problem details and leaves no database record.
-6. The frontend can view only successfully stored fetches in history/details.
+```bash
+cd monitoring-service
+./gradlew check
+```
 
-A technical retry reuses the same `clientRequestId`, so the register is not
-called twice for one submission.
+For a full-system smoke check, start Compose and follow the
+[five-minute demo](#five-minute-demo). This verifies the browser-to-backend,
+PCR mock, persistence, monitoring, and Mailpit path manually.
 
-### Build and send a monitoring report
+## Key assumptions and trade-offs
 
-1. The monitoring scheduler closes a half-open interval `[start, end)`.
-2. It calls the backend monitoring API for completed requests with an active
-   voluntary credit ban.
-3. It stores an immutable `MonitoringReport` and its report items.
-4. It sends the stored report by email.
-5. If SMTP is unavailable, only delivery state changes; a later retry sends the
-   same report content.
-
-## Design documentation
-
-- [Domain model](docs/domain-model.md) - business vocabulary, aggregates,
-  states and invariants.
-- [API contract](docs/api-contract.md) - frontend, monitoring and mock PCR
-  HTTP boundaries.
-- [Data model](docs/data-model.md) - PostgreSQL tables, constraints, indexes
-  and transaction boundaries.
-
-The official PCR reference used for the mock is
-[Requesting a credit register extract - API description, version 2.1](https://www.vero.fi/globalassets/pore/dokumentaatio-2026/requesting-a-credit-register-extract---api-description_2.1.pdf).
-
-The adapter currently maps the PCR 2.1 fields represented by the Credit Lens
-domain: extract reference/time, requested person, voluntary ban, summary,
-repayment and leasing totals, loans/collaterals/delayed amounts/foreclosure,
-and income data. PCR 2.1 `businessInformation`, `defermentPeriods`,
-`repaymentMethod` and `purposeOfUse` are intentionally ignored because no
-corresponding public Credit Lens domain/API fields exist yet.
-
-## Resilience and error handling
-
-- Connection and read timeouts are configured for the register client.
-- Register failures are mapped to safe problem details: timeout is `504`,
-  unavailable/invalid responses are `502`, and PCR rejection is `422`.
-- Failed calls are not stored and do not appear in history.
-- No database transaction stays open during an HTTP or SMTP call.
-- Report creation is unique per interval.
-- Email delivery is retried from persisted state without rebuilding a report.
-- SMTP delivery is at-least-once: if the process stops after SMTP accepts a
-  message but before the short `SENT` database update commits, the next run can
-  deliver the stored message again.
-- API errors use problem details and correlation IDs without exposing sensitive
-  values.
-
-## Testing strategy
-
-Backend tests use explicit boundaries:
-
-- controller contract tests exercise JSON, validation, HTTP statuses and
-  problem details with mocked services;
-- unit tests exercise domain rules, mapping and service branches with mocked
-  ports;
-- component tests call a real controller, service, mapper and PCR HTTP adapter
-  against WireMock while repositories remain mocked;
-- PCR client integration tests cover the HTTP request/response contract,
-  rejection, invalid response and timeout behavior without starting Spring MVC
-  or PostgreSQL;
-- API integration tests load the complete Spring context and run against one
-  shared PostgreSQL Testcontainer and WireMock. Successful persistence is
-  verified through subsequent public API reads; direct SQL assertions are kept
-  for migrations and the no-partial-write failure invariant.
-
-The API integration tests are split by use case (create, details, history and
-monitoring) rather than collected in one application test class. History and
-monitoring tests cover their native PostgreSQL queries, including stable
-pagination, successful-extract joins, active-ban filtering and half-open time
-intervals. Separate repository tests are intentionally omitted while those
-same query semantics are already covered through the full API boundary.
-
-Monitoring-service tests cover interval selection, persisted-content retry
-orchestration, backend pagination/error handling, PostgreSQL migrations and
-SMTP delivery. Frontend component tests use React Testing Library and a mocked
-backend API. The remaining broader goal is one system end-to-end happy path
-through the frontend, backend, PCR mock and monitoring service.
+- A stored `FinancingRequest` is successful and has exactly one immutable
+  `CreditExtract`. Failed and in-progress requests are not persisted.
+- PCR is synchronous for this PoC. A failed PCR call produces no history row.
+- Reusing `clientRequestId` returns an already persisted matching result
+  without another PCR call. It does not guarantee exactly-once PCR execution
+  when the first call fails, times out, or overlaps with another call.
+- Monitoring closes half-open time intervals: `completedFrom` is inclusive and
+  `completedTo` is exclusive.
+- Email delivery is at-least-once. A crash after SMTP accepts a message but
+  before the `SENT` update can cause a duplicate.
+- The mock covers the standard living-consumer extract used by the PoC. The
+  deceased-person response and some PCR fields are outside the current model.
 
 ## Security and privacy
 
-The personal identity code is sensitive. It must not be written to logs,
-metrics, traces, URLs, error responses or monitoring reports. The PoC stores it
-as plain text only to keep the exercise focused. Production use requires
-encryption or tokenization, a deterministic lookup value, access control,
-auditing and an agreed retention policy.
+Personal identity codes are sensitive. They must not appear in logs, URLs,
+responses, errors, metrics, traces, monitoring snapshots, or reports. Public
+responses expose masked values.
 
-Authentication and authorization are intentionally outside the PoC scope.
-They are required before any production use.
+The PoC stores the full code as plain text for lookup. Production use would
+require encryption or tokenization, access control, audit records, retention
+and deletion rules, and a reviewed secret-management approach. The current
+system must not be described as production-ready or secure for real customer
+data.
 
-## PoC scope
+## Deployment scope
 
-Included:
+Docker Compose is the supported local PoC deployment. It builds and runs the
+three applications with two PostgreSQL databases, WireMock, and Mailpit.
 
-- the standard successful register response for a living consumer;
-- request history containing only successfully persisted fetches;
-- one scheduled email report per interval;
-- local mocks for the register and email provider.
+Public hosting, cloud infrastructure, high availability, production TLS,
+managed secrets, backups, and operational observability are outside scope.
+The repository demonstrates component boundaries and local execution, not a
+production deployment.
 
-Outside scope:
+## Effort
 
-- the separate deceased-person register response;
-- production-grade identity and access management;
-- event streaming or an outbox;
-- notification channels other than email;
-- production retention and deletion policies.
+**Candidate action required:** replace this placeholder with the actual time
+spent before submission. No reliable effort value is recorded in the
+repository.
+
+- Total effort: `[enter actual hours]`
+- Optional breakdown: `[design / implementation / tests / documentation]`
+
+## Further documentation
+
+- [Domain model](docs/domain-model.md) - vocabulary, aggregates, invariants,
+  and deliberate PoC trade-offs.
+- [API contract](docs/api-contract.md) - HTTP operations, validation, errors,
+  pagination, and idempotency.
+- [Data model](docs/data-model.md) - schemas, constraints, indexes, and
+  transaction boundaries.
+- [Boundary and data flows](docs/credit-lens-dto-domain-data-flow.md) - the
+  three application flows and privacy boundary.
+- [Development guide](docs/development.md) - manual startup and local tools.
+- [UI guidelines](docs/ui-guidelines.md) - current interaction, privacy, and
+  accessibility guidance.
+- [Historical documents](docs/archive/) - superseded design and detailed
+  implementation snapshots.
+
+The PCR mock is based on the Finnish Tax Administration's
+[Requesting a credit register extract - API description, version 2.1](https://www.vero.fi/globalassets/pore/dokumentaatio-2026/requesting-a-credit-register-extract---api-description_2.1.pdf).

@@ -1,10 +1,57 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="980" height="390" viewBox="0 0 980 390">
-  <style>text{font:15px Arial,sans-serif;fill:#172033} .entity{fill:#eef4ff;stroke:#4169a1;stroke-width:2} .head{fill:#4169a1} .headtext{fill:white;font-weight:bold} .line{stroke:#425466;stroke-width:2;fill:none} .rel{font-size:13px;fill:#425466}</style>
-  <rect class="entity" x="35" y="120" width="270" height="190" rx="6"/><rect class="head" x="35" y="120" width="270" height="36" rx="6"/><text class="headtext" x="170" y="144" text-anchor="middle">CONSUMER</text>
-  <text x="55" y="185">uuid id PK</text><text x="55" y="215">varchar personal_identity_code UK</text><text x="55" y="245">timestamptz created_at</text>
-  <rect class="entity" x="355" y="70" width="300" height="250" rx="6"/><rect class="head" x="355" y="70" width="300" height="36" rx="6"/><text class="headtext" x="505" y="94" text-anchor="middle">FINANCING_REQUEST</text>
-  <text x="375" y="135">uuid id PK</text><text x="375" y="165">uuid consumer_id FK</text><text x="375" y="195">uuid client_request_id UK</text><text x="375" y="225">varchar_array extract_purposes</text><text x="375" y="255">timestamptz requested_at</text><text x="375" y="285">timestamptz completed_at</text>
-  <rect class="entity" x="705" y="120" width="240" height="190" rx="6"/><rect class="head" x="705" y="120" width="240" height="36" rx="6"/><text class="headtext" x="825" y="144" text-anchor="middle">CREDIT_EXTRACT</text>
-  <text x="725" y="185">uuid id PK</text><text x="725" y="215">uuid financing_request_id FK_UK</text><text x="725" y="245">uuid extract_reference UK</text><text x="725" y="275">jsonb register_data</text>
-  <path class="line" d="M305 195 H355"/><text class="rel" x="330" y="185" text-anchor="middle">has</text><path class="line" d="M655 195 H705"/><text class="rel" x="680" y="185" text-anchor="middle">produces</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="1240" height="590" viewBox="0 0 1240 590" role="img" aria-labelledby="title description">
+  <title id="title">Credit Lens backend data model</title>
+  <desc id="description">Consumer has many financing requests. A financing request has at most one credit extract at database level. The credit extract stores summary columns and four JSONB arrays.</desc>
+  <style>
+    text{font:14px Arial,sans-serif;fill:#172033}
+    .title{font-size:20px;font-weight:bold}
+    .entity{fill:#eef4ff;stroke:#4169a1;stroke-width:2}
+    .head{fill:#4169a1}
+    .headtext{fill:white;font-weight:bold}
+    .line{stroke:#425466;stroke-width:2;fill:none}
+    .rel{font-size:13px;fill:#425466}
+    .note{font-size:13px;fill:#425466}
+  </style>
+  <text class="title" x="35" y="30">Backend-owned tables</text>
+
+  <rect class="entity" x="35" y="110" width="270" height="160" rx="6"/>
+  <rect class="head" x="35" y="110" width="270" height="36" rx="6"/>
+  <text class="headtext" x="170" y="134" text-anchor="middle">CONSUMER</text>
+  <text x="55" y="175">uuid id PK</text>
+  <text x="55" y="205">varchar personal_identity_code UK</text>
+  <text x="55" y="235">timestamptz created_at</text>
+
+  <rect class="entity" x="355" y="80" width="320" height="230" rx="6"/>
+  <rect class="head" x="355" y="80" width="320" height="36" rx="6"/>
+  <text class="headtext" x="515" y="104" text-anchor="middle">FINANCING_REQUEST</text>
+  <text x="375" y="145">uuid id PK</text>
+  <text x="375" y="175">uuid consumer_id FK</text>
+  <text x="375" y="205">uuid client_request_id UK</text>
+  <text x="375" y="235">varchar[] extract_purposes</text>
+  <text x="375" y="265">timestamptz requested_at</text>
+  <text x="375" y="295">timestamptz completed_at</text>
+
+  <rect class="entity" x="735" y="50" width="455" height="470" rx="6"/>
+  <rect class="head" x="735" y="50" width="455" height="36" rx="6"/>
+  <text class="headtext" x="962" y="74" text-anchor="middle">CREDIT_EXTRACT</text>
+  <text x="755" y="115">uuid id PK</text>
+  <text x="755" y="143">uuid financing_request_id FK, UK</text>
+  <text x="755" y="171">uuid extract_reference UK</text>
+  <text x="755" y="199">timestamptz creation_time_utc</text>
+  <text x="755" y="227">boolean voluntary_ban_active</text>
+  <text x="755" y="255">varchar voluntary_ban_reason</text>
+  <text x="755" y="283">integer lenders_count</text>
+  <text x="755" y="311">integer loan_contracts_count</text>
+  <text x="755" y="339">integer guaranteed_loan_contracts_count</text>
+  <text x="755" y="367">jsonb repayment_amounts</text>
+  <text x="755" y="395">jsonb leasing_instalment_amounts</text>
+  <text x="755" y="423">jsonb loans</text>
+  <text x="755" y="451">jsonb income_data</text>
+  <text x="755" y="479">timestamptz persisted_at</text>
+
+  <path class="line" d="M305 195 H355"/>
+  <text class="rel" x="330" y="184" text-anchor="middle">1 : many</text>
+  <path class="line" d="M675 195 H735"/>
+  <text class="rel" x="705" y="184" text-anchor="middle">1 : 0..1*</text>
+
+  <text class="note" x="35" y="555">* Application transaction and domain invariant require exactly one extract for every stored request.</text>
 </svg>
