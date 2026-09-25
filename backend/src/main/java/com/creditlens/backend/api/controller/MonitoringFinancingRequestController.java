@@ -1,7 +1,7 @@
 package com.creditlens.backend.api.controller;
 
-import com.creditlens.backend.api.dto.GetMonitoringFinancingRequestsRequest;
-import com.creditlens.backend.api.dto.GetMonitoringFinancingRequestsResponse;
+import com.creditlens.backend.api.dto.ListMonitoringFinancingRequestsRequest;
+import com.creditlens.backend.api.dto.ListMonitoringFinancingRequestsResponse;
 import com.creditlens.backend.service.MonitoringFinancingRequestService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -22,8 +22,8 @@ public class MonitoringFinancingRequestController {
   }
 
   @GetMapping
-  public ResponseEntity<GetMonitoringFinancingRequestsResponse> get(
-      @Valid @ModelAttribute GetMonitoringFinancingRequestsRequest request) {
-    return ResponseEntity.ok(monitoringFinancingRequestService.get(request));
+  public ResponseEntity<ListMonitoringFinancingRequestsResponse> list(
+      @Valid @ModelAttribute ListMonitoringFinancingRequestsRequest request) {
+    return ResponseEntity.ok(monitoringFinancingRequestService.list(request));
   }
 }

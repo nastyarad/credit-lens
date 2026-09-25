@@ -50,71 +50,63 @@ type RequestError = {
   retryable: boolean;
 };
 
-function sanitizeDetail(detail: string) {
-  return detail.replace(
-    /\b\d{6}[+\-A-FYXWVU]\d{3}[0-9A-FHJ-NPR-Y]\b/gi,
-    "[redacted identity code]",
-  );
-}
 function classifyError(error: unknown): RequestError {
   if (error instanceof FinancingRequestNetworkError)
     return {
       kind: "network",
-      title: "Credit Lens could not be reached",
+      title: "The service is temporarily unavailable",
       detail:
-        "Check the connection and try again. No successful request was saved.",
+        "Check your connection and try again. No successful request was saved.",
       retryable: true,
     };
   if (error instanceof FinancingRequestApiError) {
-    const detail = sanitizeDetail(
-      error.problem.detail || "No successful request was saved.",
-    );
     if (error.status === 422)
       return {
         kind: "rejection",
-        title: "The register could not provide an extract for this request",
-        detail: `${detail} No successful request was saved.`,
+        title: "We could not request an extract",
+        detail:
+          "Review the information and start a new request if needed. No successful request was saved.",
         reference: error.problem.correlationId,
         retryable: false,
       };
     if (error.status === 504)
       return {
         kind: "timeout",
-        title: "The register took too long to respond",
+        title: "The request timed out",
         detail:
-          "The request was not completed. No successful request was saved.",
+          "Try again. No successful request was saved.",
         reference: error.problem.correlationId,
         retryable: true,
       };
     if (error.status === 502 || error.status === 503)
       return {
         kind: "unavailable",
-        title: "The register is currently unavailable",
+        title: "The service is temporarily unavailable",
         detail:
-          "Try again when the register is available. No successful request was saved.",
+          "Try again later. No successful request was saved.",
         reference: error.problem.correlationId,
         retryable: true,
       };
     if (error.status === 409)
       return {
         kind: "conflict",
-        title: "This client request ID is already in use",
-        detail: `${detail} Review the existing result or start a new request.`,
+        title: "We could not complete this request",
+        detail: "Start a new request. No successful request was saved.",
         reference: error.problem.correlationId,
         retryable: false,
       };
     return {
       kind: "unexpected",
-      title: error.problem.title || "The request could not be completed",
-      detail,
+      title: "We could not complete the request",
+      detail: "Try again. No successful request was saved.",
       reference: error.problem.correlationId,
       retryable: true,
     };
   }
   return {
     kind: "unexpected",
-    title: "The request could not be completed",
-    detail: "Something unexpected happened. No successful request was saved.",
+    title: "We could not complete the request",
+    detail: "Try again. No successful request was saved.",
     retryable: true,
   };
 }
@@ -128,6 +120,7 @@ function App() {
   const [clientRequestId, setClientRequestId] = useState<string | null>(null);
   const [lastSubmission, setLastSubmission] = useState<Submission | null>(null);
   const pageTitleRef = useRef<HTMLHeadingElement>(null);
+  const activeRequestRef = useRef<AbortController | null>(null);
   const isSubmitting = state === "submitting";
   const title =
     detailsId
@@ -143,12 +136,27 @@ function App() {
       ? `Error: ${title} | Credit Lens`
       : `${title} | Credit Lens`;
   }, [error, title]);
+  useEffect(
+    () => () => {
+      activeRequestRef.current?.abort();
+    },
+    [],
+  );
+  function cancelActiveRequest() {
+    activeRequestRef.current?.abort();
+    activeRequestRef.current = null;
+  }
   function moveToSection(nextSection: "new" | "history") {
+    cancelActiveRequest();
     setSection(nextSection);
     setDetailsId(null);
+    setClientRequestId(null);
+    setLastSubmission(null);
     if (nextSection === "new") {
       setResult(null);
       setError(null);
+      setState("idle");
+    } else if (state === "submitting") {
       setState("idle");
     }
   }
@@ -156,6 +164,9 @@ function App() {
     personalIdentityCode: string,
     purpose: CreditRegisterExtractPurpose,
   ) {
+    cancelActiveRequest();
+    const controller = new AbortController();
+    activeRequestRef.current = controller;
     const canRetrySameRequest = Boolean(
       clientRequestId &&
         lastSubmission?.personalIdentityCode === personalIdentityCode &&
@@ -173,13 +184,25 @@ function App() {
         clientRequestId: requestId,
         personalIdentityCode,
         creditRegisterExtractPurposes: [purpose],
-      });
+      }, controller.signal);
+      if (
+        controller.signal.aborted ||
+        activeRequestRef.current !== controller
+      )
+        return;
+      activeRequestRef.current = null;
       setResult(response);
       setState("completed");
       setClientRequestId(null);
       setLastSubmission(null);
       requestAnimationFrame(() => pageTitleRef.current?.focus());
     } catch (requestError: unknown) {
+      if (
+        controller.signal.aborted ||
+        activeRequestRef.current !== controller
+      )
+        return;
+      activeRequestRef.current = null;
       const nextError = classifyError(requestError);
       setState(nextError.kind === "network" ? "network-error" : "api-error");
       setError(nextError);
@@ -187,6 +210,7 @@ function App() {
     }
   }
   function startNewRequest() {
+    cancelActiveRequest();
     setResult(null);
     setError(null);
     setClientRequestId(null);
@@ -285,49 +309,49 @@ function App() {
         </div>
         <main id="main-content" tabIndex={-1}>
           <div className="content">
-            <div className="page-head">
-              <div>
-                <h1 ref={pageTitleRef} tabIndex={-1}>
-                  {title}
-                </h1>
-                <p>
-                  {detailsId ? (
-                    "Review the immutable register snapshot for this financing request."
-                  ) : section === "history" ? (
-                    "Find successful register requests for one consumer. Failed requests are not stored."
-                  ) : state === "completed" && result ? (
-                    <>
-                      Consumer{" "}
-                      <strong>
-                        {result.consumer.maskedPersonalIdentityCode}
-                      </strong>{" "}
-                      · Extract created{" "}
-                      {new Intl.DateTimeFormat(undefined, {
-                        dateStyle: "medium",
-                        timeStyle: "short",
-                      }).format(
-                        new Date(
-                          result.creditExtractSummary.creationTimeUtc ||
-                            result.completedAt,
-                        ),
-                      )}
-                    </>
-                  ) : (
-                    "Retrieve a current register snapshot for a consumer financing assessment."
-                  )}
-                </p>
+            {!detailsId && (
+              <div className="page-head">
+                <div>
+                  <h1 ref={pageTitleRef} tabIndex={-1}>
+                    {title}
+                  </h1>
+                  <p>
+                    {section === "history" ? (
+                      "Find successful register requests for one consumer. Failed requests are not stored."
+                    ) : state === "completed" && result ? (
+                      <>
+                        Consumer{" "}
+                        <strong>
+                          {result.consumer.maskedPersonalIdentityCode}
+                        </strong>{" "}
+                        · Extract created{" "}
+                        {new Intl.DateTimeFormat(undefined, {
+                          dateStyle: "medium",
+                          timeStyle: "short",
+                        }).format(
+                          new Date(
+                            result.creditExtractSummary.creationTimeUtc ||
+                              result.completedAt,
+                          ),
+                        )}
+                      </>
+                    ) : (
+                      "Retrieve a current register snapshot for a consumer financing assessment."
+                    )}
+                  </p>
+                </div>
+                {state === "completed" && result && section === "new" && (
+                  <button
+                    className="secondary-button page-action"
+                    type="button"
+                    onClick={startNewRequest}
+                  >
+                    <Plus aria-hidden="true" />
+                    New request
+                  </button>
+                )}
               </div>
-              {state === "completed" && result && section === "new" && (
-                <button
-                  className="secondary-button page-action"
-                  type="button"
-                  onClick={startNewRequest}
-                >
-                  <Plus aria-hidden="true" />
-                  New request
-                </button>
-              )}
-            </div>
+            )}
             {detailsId ? (
               <FinancingRequestDetailsView id={detailsId} onBack={returnToHistory} />
             ) : section === "history" ? (
@@ -359,7 +383,6 @@ function App() {
                   <FinancingRequestForm
                     disabled={isSubmitting}
                     onSubmit={submitRequest}
-                    showClearButton={!isSubmitting}
                   />
                   <aside
                     className="context-panel"

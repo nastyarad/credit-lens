@@ -2,14 +2,14 @@ package com.creditlens.backend.api.dto;
 
 import java.util.List;
 
-public record GetMonitoringFinancingRequestsResponse(
-    List<MonitoringFinancingRequestDto> items,
+public record SearchFinancingRequestsResponse(
+    List<FinancingRequestHistoryItemDto> items,
     int page,
     int size,
     long totalItems,
     int totalPages) {
 
-  public GetMonitoringFinancingRequestsResponse {
+  public SearchFinancingRequestsResponse {
     items = List.copyOf(items);
     if (page < 0 || size < 1 || totalItems < 0 || totalPages < 0) {
       throw new IllegalArgumentException(

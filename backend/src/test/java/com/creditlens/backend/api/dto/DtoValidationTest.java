@@ -30,8 +30,8 @@ class DtoValidationTest {
             UUID.randomUUID(),
             personalIdentityCode,
             List.of(CreditRegisterExtractPurposeDto.NewConsumerCredit));
-    SearchFinancingRequestRequest search =
-        new SearchFinancingRequestRequest(personalIdentityCode, 0, 20);
+    SearchFinancingRequestsRequest search =
+        new SearchFinancingRequestsRequest(personalIdentityCode, 0, 20);
     assertThat(request.toString())
         .contains("personalIdentityCode=<redacted>")
         .doesNotContain(personalIdentityCode);
@@ -59,8 +59,8 @@ class DtoValidationTest {
 
   @Test
   void appliesMonitoringPaginationDefaults() {
-    GetMonitoringFinancingRequestsRequest request =
-        new GetMonitoringFinancingRequestsRequest(
+    ListMonitoringFinancingRequestsRequest request =
+        new ListMonitoringFinancingRequestsRequest(
             Instant.parse("2026-09-18T10:00:00Z"),
             Instant.parse("2026-09-18T10:05:00Z"),
             null,
@@ -76,28 +76,28 @@ class DtoValidationTest {
     Instant from = Instant.parse("2026-09-18T10:00:00Z");
     Instant to = Instant.parse("2026-09-18T10:05:00Z");
 
-    assertThat(validator.validate(new GetMonitoringFinancingRequestsRequest(from, to, -1, 100)))
+    assertThat(validator.validate(new ListMonitoringFinancingRequestsRequest(from, to, -1, 100)))
         .extracting(violation -> violation.getPropertyPath().toString())
         .contains("page");
-    assertThat(validator.validate(new GetMonitoringFinancingRequestsRequest(from, to, 0, 0)))
+    assertThat(validator.validate(new ListMonitoringFinancingRequestsRequest(from, to, 0, 0)))
         .extracting(violation -> violation.getPropertyPath().toString())
         .contains("size");
-    assertThat(validator.validate(new GetMonitoringFinancingRequestsRequest(from, to, 0, 501)))
+    assertThat(validator.validate(new ListMonitoringFinancingRequestsRequest(from, to, 0, 501)))
         .extracting(violation -> violation.getPropertyPath().toString())
         .contains("size");
-    assertThat(validator.validate(new GetMonitoringFinancingRequestsRequest(null, to, 0, 100)))
+    assertThat(validator.validate(new ListMonitoringFinancingRequestsRequest(null, to, 0, 100)))
         .extracting(violation -> violation.getPropertyPath().toString())
         .contains("completedFrom");
-    assertThat(validator.validate(new GetMonitoringFinancingRequestsRequest(from, null, 0, 100)))
+    assertThat(validator.validate(new ListMonitoringFinancingRequestsRequest(from, null, 0, 100)))
         .extracting(violation -> violation.getPropertyPath().toString())
         .contains("completedTo");
-    assertThat(validator.validate(new GetMonitoringFinancingRequestsRequest(from, from, 0, 100)))
+    assertThat(validator.validate(new ListMonitoringFinancingRequestsRequest(from, from, 0, 100)))
         .extracting(violation -> violation.getPropertyPath().toString())
         .contains("intervalValid");
-    assertThat(validator.validate(new GetMonitoringFinancingRequestsRequest(to, from, 0, 100)))
+    assertThat(validator.validate(new ListMonitoringFinancingRequestsRequest(to, from, 0, 100)))
         .extracting(violation -> violation.getPropertyPath().toString())
         .contains("intervalValid");
-    assertThat(validator.validate(new GetMonitoringFinancingRequestsRequest(from, to, 0, 500)))
+    assertThat(validator.validate(new ListMonitoringFinancingRequestsRequest(from, to, 0, 500)))
         .isEmpty();
   }
 
@@ -105,14 +105,14 @@ class DtoValidationTest {
   void copiesMonitoringResponseItemsToAnImmutableListAndRejectsInvalidMetadata() {
     List<MonitoringFinancingRequestDto> items =
         new java.util.ArrayList<>(List.of(monitoringItem()));
-    GetMonitoringFinancingRequestsResponse response =
-        new GetMonitoringFinancingRequestsResponse(items, 0, 100, 1, 1);
+    ListMonitoringFinancingRequestsResponse response =
+        new ListMonitoringFinancingRequestsResponse(items, 0, 100, 1, 1);
 
     items.clear();
     assertThat(response.items()).containsExactly(monitoringItem());
     assertThatThrownBy(() -> response.items().clear())
         .isInstanceOf(UnsupportedOperationException.class);
-    assertThatThrownBy(() -> new GetMonitoringFinancingRequestsResponse(List.of(), -1, 100, 0, 0))
+    assertThatThrownBy(() -> new ListMonitoringFinancingRequestsResponse(List.of(), -1, 100, 0, 0))
         .isInstanceOf(IllegalArgumentException.class);
   }
 

@@ -6,13 +6,13 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import java.time.Instant;
 
-public record GetMonitoringFinancingRequestsRequest(
+public record ListMonitoringFinancingRequestsRequest(
     @NotNull Instant completedFrom,
     @NotNull Instant completedTo,
     @Min(0) Integer page,
     @Min(1) @Max(500) Integer size) {
 
-  public GetMonitoringFinancingRequestsRequest {
+  public ListMonitoringFinancingRequestsRequest {
     page = page == null ? 0 : page;
     size = size == null ? 100 : size;
   }

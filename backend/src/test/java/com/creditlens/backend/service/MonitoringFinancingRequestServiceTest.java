@@ -5,8 +5,8 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.creditlens.backend.api.dto.GetMonitoringFinancingRequestsRequest;
-import com.creditlens.backend.api.dto.GetMonitoringFinancingRequestsResponse;
+import com.creditlens.backend.api.dto.ListMonitoringFinancingRequestsRequest;
+import com.creditlens.backend.api.dto.ListMonitoringFinancingRequestsResponse;
 import com.creditlens.backend.api.dto.MonitoringFinancingRequestDto;
 import com.creditlens.backend.persistence.repository.FinancingRequestRepository;
 import com.creditlens.backend.persistence.repository.MonitoringFinancingRequestProjection;
@@ -37,9 +37,9 @@ class MonitoringFinancingRequestServiceTest {
             FROM, TO, PageRequest.of(2, 25)))
         .thenReturn(new PageImpl<>(List.of(projection), PageRequest.of(2, 25), 51));
 
-    GetMonitoringFinancingRequestsResponse response =
+    ListMonitoringFinancingRequestsResponse response =
         new MonitoringFinancingRequestService(financingRequestRepository)
-            .get(new GetMonitoringFinancingRequestsRequest(FROM, TO, 2, 25));
+            .list(new ListMonitoringFinancingRequestsRequest(FROM, TO, 2, 25));
 
     MonitoringFinancingRequestDto item = response.items().getFirst();
     assertThat(item.financingRequestId()).isEqualTo(REQUEST_ID);
@@ -63,9 +63,9 @@ class MonitoringFinancingRequestServiceTest {
             eq(FROM), eq(TO), eq(PageRequest.of(0, 100))))
         .thenReturn(new PageImpl<>(List.of(), PageRequest.of(0, 100), 0));
 
-    GetMonitoringFinancingRequestsResponse response =
+    ListMonitoringFinancingRequestsResponse response =
         new MonitoringFinancingRequestService(financingRequestRepository)
-            .get(new GetMonitoringFinancingRequestsRequest(FROM, TO, null, null));
+            .list(new ListMonitoringFinancingRequestsRequest(FROM, TO, null, null));
 
     assertThat(response.items()).isEmpty();
     assertThat(response.page()).isZero();

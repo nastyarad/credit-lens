@@ -44,7 +44,7 @@ tasks.named('test') {
 spotless {
 	java {
 		target 'src/**/*.java'
-		googleJavaFormat('1.28.0')
+		googleJavaFormat('1.30.0')
 	}
 }
 
@@ -57,6 +57,18 @@ jacocoTestReport {
 	}
 }
 
+jacocoTestCoverageVerification {
+	violationRules {
+		rule {
+			limit {
+				counter = 'LINE'
+				value = 'COVEREDRATIO'
+				minimum = 0.60
+			}
+		}
+	}
+}
+
 tasks.named('check') {
-	dependsOn tasks.named('jacocoTestReport')
+	dependsOn tasks.named('jacocoTestCoverageVerification')
 }

@@ -12,8 +12,8 @@ import static org.mockito.Mockito.when;
 import com.creditlens.backend.api.dto.CreateFinancingRequestRequest;
 import com.creditlens.backend.api.dto.CreateFinancingRequestResponse;
 import com.creditlens.backend.api.dto.CreditRegisterExtractPurposeDto;
-import com.creditlens.backend.api.dto.FinancingRequestDetailsDto;
-import com.creditlens.backend.api.dto.SearchFinancingRequestRequest;
+import com.creditlens.backend.api.dto.GetFinancingRequestDetailsResponse;
+import com.creditlens.backend.api.dto.SearchFinancingRequestsRequest;
 import com.creditlens.backend.domain.Consumer;
 import com.creditlens.backend.domain.CreditExtract;
 import com.creditlens.backend.domain.CreditInformationSummary;
@@ -276,7 +276,7 @@ class FinancingRequestServiceTest {
             new PageImpl<>(List.of(item), org.springframework.data.domain.PageRequest.of(1, 2), 3));
 
     var result =
-        service.searchHistory(new SearchFinancingRequestRequest(PERSONAL_IDENTITY_CODE, 1, 2));
+        service.searchHistory(new SearchFinancingRequestsRequest(PERSONAL_IDENTITY_CODE, 1, 2));
 
     assertThat(result.items()).hasSize(1);
     assertThat(result.items().getFirst().maskedPersonalIdentityCode()).isEqualTo("******-123A");
@@ -299,7 +299,7 @@ class FinancingRequestServiceTest {
     when(creditExtractRepository.findByFinancingRequest_Id(REQUEST_ID))
         .thenReturn(Optional.of(new CreditExtractEntity(emptyExtract(), existing)));
 
-    FinancingRequestDetailsDto result = service.getDetails(REQUEST_ID);
+    GetFinancingRequestDetailsResponse result = service.getDetails(REQUEST_ID);
 
     assertThat(result.id()).isEqualTo(REQUEST_ID);
     assertThat(result.consumer().maskedPersonalIdentityCode()).isEqualTo("******-123A");

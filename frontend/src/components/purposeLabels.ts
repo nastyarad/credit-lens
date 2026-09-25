@@ -1,4 +1,7 @@
-import type { CreditRegisterExtractPurpose } from '../api/types'
+import type {
+  CreditRegisterExtractPurpose,
+  VoluntaryCreditBanReason,
+} from '../api/types'
 
 export const purposeLabels: Record<CreditRegisterExtractPurpose, string> = {
   NewConsumerCredit: 'New consumer credit',
@@ -11,3 +14,11 @@ export const purposeLabels: Record<CreditRegisterExtractPurpose, string> = {
   GuaranteeOrThirdPartyPledge: 'Guarantee or third-party pledge',
 }
 
+export const voluntaryCreditBanReasonLabels: Record<
+  VoluntaryCreditBanReason,
+  string
+> = {
+  RiskOfIdentityTheft: 'Risk of identity theft',
+  ControlOfPersonalFinances: 'Control of personal finances',
+  Other: 'Other reason',
+}

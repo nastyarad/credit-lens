@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
-public record FinancingRequestDetailsDto(
+public record GetFinancingRequestDetailsResponse(
     UUID id,
     UUID clientRequestId,
     ConsumerDto consumer,
@@ -13,7 +13,7 @@ public record FinancingRequestDetailsDto(
     Instant requestedAt,
     Instant completedAt,
     CreditExtractDto creditExtract) {
-  public FinancingRequestDetailsDto {
+  public GetFinancingRequestDetailsResponse {
     Objects.requireNonNull(id, "id must not be null");
     Objects.requireNonNull(clientRequestId, "clientRequestId must not be null");
     Objects.requireNonNull(consumer, "consumer must not be null");

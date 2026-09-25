@@ -13,7 +13,7 @@ import com.creditlens.backend.api.dto.ConsumerDto;
 import com.creditlens.backend.api.dto.CreditExtractDto;
 import com.creditlens.backend.api.dto.CreditInformationSummaryDto;
 import com.creditlens.backend.api.dto.CreditRegisterExtractPurposeDto;
-import com.creditlens.backend.api.dto.FinancingRequestDetailsDto;
+import com.creditlens.backend.api.dto.GetFinancingRequestDetailsResponse;
 import com.creditlens.backend.api.dto.VoluntaryBanOnCreditsDto;
 import com.creditlens.backend.service.FinancingRequestNotFoundException;
 import com.creditlens.backend.service.FinancingRequestService;
@@ -94,8 +94,8 @@ class FinancingRequestDetailsControllerTest {
     verify(financingRequestService, never()).getDetails(any());
   }
 
-  private FinancingRequestDetailsDto detailsResponse() {
-    return new FinancingRequestDetailsDto(
+  private GetFinancingRequestDetailsResponse detailsResponse() {
+    return new GetFinancingRequestDetailsResponse(
         REQUEST_ID,
         UUID.fromString("11111111-1111-1111-1111-111111111111"),
         new ConsumerDto(UUID.fromString("33333333-3333-3333-3333-333333333333"), "******-123A"),

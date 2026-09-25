@@ -2,10 +2,10 @@ package com.creditlens.backend.service;
 
 import com.creditlens.backend.api.dto.CreateFinancingRequestRequest;
 import com.creditlens.backend.api.dto.CreateFinancingRequestResponse;
-import com.creditlens.backend.api.dto.FinancingRequestDetailsDto;
 import com.creditlens.backend.api.dto.FinancingRequestHistoryItemDto;
-import com.creditlens.backend.api.dto.SearchFinancingRequestRequest;
-import com.creditlens.backend.api.dto.SearchFinancingRequestResponse;
+import com.creditlens.backend.api.dto.GetFinancingRequestDetailsResponse;
+import com.creditlens.backend.api.dto.SearchFinancingRequestsRequest;
+import com.creditlens.backend.api.dto.SearchFinancingRequestsResponse;
 import com.creditlens.backend.api.mapper.FinancingRequestResponseMapper;
 import com.creditlens.backend.domain.Consumer;
 import com.creditlens.backend.domain.CreditExtract;
@@ -130,13 +130,13 @@ public class FinancingRequestService {
                         new Consumer(UUID.randomUUID(), personalIdentityCode, requestedAt))));
   }
 
-  public SearchFinancingRequestResponse searchHistory(SearchFinancingRequestRequest request) {
+  public SearchFinancingRequestsResponse searchHistory(SearchFinancingRequestsRequest request) {
     PersonalIdentityCode personalIdentityCode =
         PersonalIdentityCode.of(request.personalIdentityCode());
     Page<FinancingRequestHistoryProjection> history =
         financingRequestRepository.findHistoryByPersonalIdentityCode(
             personalIdentityCode.value(), PageRequest.of(request.page(), request.size()));
-    return new SearchFinancingRequestResponse(
+    return new SearchFinancingRequestsResponse(
         history.getContent().stream().map(this::toHistoryItem).toList(),
         history.getNumber(),
         history.getSize(),
@@ -144,7 +144,7 @@ public class FinancingRequestService {
         history.getTotalPages());
   }
 
-  public FinancingRequestDetailsDto getDetails(UUID id) {
+  public GetFinancingRequestDetailsResponse getDetails(UUID id) {
     FinancingRequestEntity entity =
         financingRequestRepository
             .findById(id)

@@ -18,24 +18,21 @@ function formatDate(value: string) {
     timeStyle: "short",
   }).format(new Date(value));
 }
-function shortenReference(value: string) {
-  return value.length > 20 ? `${value.slice(0, 9)}…${value.slice(-5)}` : value;
-}
 function safeError(error: unknown) {
   if (error instanceof FinancingRequestApiError)
     return {
-      title: error.problem.title || "History could not be loaded",
-      detail: error.problem.detail || "Try again.",
+      title: "We could not load request history",
+      detail: "Try again. If the problem continues, contact support.",
       reference: error.problem.correlationId,
     };
   if (error instanceof FinancingRequestNetworkError)
     return {
-      title: "Credit Lens could not be reached",
-      detail: "Check the connection and try again.",
+      title: "We could not load request history",
+      detail: "Check your connection and try again.",
     };
   return {
-    title: "History could not be loaded",
-    detail: "Something unexpected happened. Try again.",
+    title: "We could not load request history",
+    detail: "Try again. If the problem continues, contact support.",
   };
 }
 
@@ -46,7 +43,8 @@ export function FinancingRequestHistory({
 }) {
   const inputId = useId();
   const errorId = `${inputId}-error`;
-  const summaryRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const errorRef = useRef<HTMLDivElement>(null);
   const [value, setValue] = useState("");
   const [submittedCode, setSubmittedCode] = useState<string | null>(null);
   const [page, setPage] = useState<FinancingRequestHistoryPage | null>(null);
@@ -72,7 +70,7 @@ export function FinancingRequestHistory({
     } catch (requestError) {
       const nextError = safeError(requestError);
       setError(nextError);
-      requestAnimationFrame(() => summaryRef.current?.focus());
+      requestAnimationFrame(() => errorRef.current?.focus());
     } finally {
       setLoading(false);
     }
@@ -84,7 +82,7 @@ export function FinancingRequestHistory({
       setValidationError(
         "Enter a Finnish personal identity code in the required format.",
       );
-      requestAnimationFrame(() => summaryRef.current?.focus());
+      requestAnimationFrame(() => inputRef.current?.focus());
       return;
     }
     setValidationError("");
@@ -97,20 +95,10 @@ export function FinancingRequestHistory({
   return (
     <section className="history-view" aria-labelledby="history-results-title">
       <form className="history-search" onSubmit={submit} noValidate>
-        {validationError && (
-          <div
-            className="error-summary"
-            ref={summaryRef}
-            tabIndex={-1}
-            role="alert"
-          >
-            <h2>There is a problem</h2>
-            <a href={`#${inputId}`}>{validationError}</a>
-          </div>
-        )}
         <div className="field-group">
           <label htmlFor={inputId}>Finnish personal identity code</label>
           <input
+            ref={inputRef}
             id={inputId}
             type="text"
             autoComplete="off"
@@ -125,6 +113,11 @@ export function FinancingRequestHistory({
             aria-describedby={validationError ? errorId : undefined}
             disabled={loading}
           />
+          {validationError && (
+            <p className="field-error" id={errorId} role="alert">
+              {validationError}
+            </p>
+          )}
         </div>
         <button
           className="primary-button"
@@ -145,7 +138,7 @@ export function FinancingRequestHistory({
       {error && (
         <div
           className="error-panel"
-          ref={summaryRef}
+          ref={errorRef}
           tabIndex={-1}
           role="alert"
         >
@@ -170,7 +163,9 @@ export function FinancingRequestHistory({
           aria-labelledby="history-results-title"
         >
           <div className="history-meta">
-            <strong id="history-results-title">Successful requests</strong>
+            <strong id="history-results-title">
+              Successful requests for {page.items[0].maskedPersonalIdentityCode}
+            </strong>
             <span>{page.totalItems} extracts · newest first</span>
           </div>
           <div className="table-wrap">
@@ -181,9 +176,7 @@ export function FinancingRequestHistory({
               <thead>
                 <tr>
                   <th>Requested</th>
-                  <th>Consumer</th>
                   <th>Voluntary ban</th>
-                  <th>Extract reference</th>
                   <th>Details</th>
                 </tr>
               </thead>
@@ -193,10 +186,6 @@ export function FinancingRequestHistory({
                     <td>
                       <span className="mobile-label">Requested</span>
                       <time>{formatDate(item.requestedAt)}</time>
-                    </td>
-                    <td>
-                      <span className="mobile-label">Consumer</span>
-                      {item.maskedPersonalIdentityCode}
                     </td>
                     <td
                       className={
@@ -221,16 +210,6 @@ export function FinancingRequestHistory({
                       >
                         View details
                       </button>
-                    </td>
-                    <td>
-                      <span className="mobile-label">Reference</span>
-                      <span
-                        className="reference-value"
-                        title={item.extractReference}
-                        aria-label={item.extractReference}
-                      >
-                        {shortenReference(item.extractReference)}
-                      </span>
                     </td>
                   </tr>
                 ))}

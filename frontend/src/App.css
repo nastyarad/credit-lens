@@ -551,8 +551,12 @@ code,
   display: grid;
   grid-template-columns: minmax(220px, 650px) auto;
   gap: 12px;
-  align-items: end;
+  align-items: start;
   margin-bottom: 24px;
+}
+.history-search > .primary-button {
+  align-self: start;
+  margin-top: 24px;
 }
 .history-view > .error-panel {
   margin-bottom: 20px;
@@ -771,6 +775,9 @@ td time {
   .history-search {
     grid-template-columns: 1fr;
   }
+  .history-search > .primary-button {
+    margin-top: 0;
+  }
   .history-meta {
     display: block;
   }
@@ -830,6 +837,13 @@ td time {
   }
   td[data-field="ban"] .mobile-label {
     display: inline;
+  }
+  .details-panel td[data-label]::before {
+    content: attr(data-label);
+    flex: 0 0 42%;
+    color: var(--muted);
+    font-weight: 500;
+    text-align: left;
   }
 }
 

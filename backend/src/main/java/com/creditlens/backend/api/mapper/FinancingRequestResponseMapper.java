@@ -9,7 +9,7 @@ import com.creditlens.backend.api.dto.CreditInformationSummaryDto;
 import com.creditlens.backend.api.dto.CreditRegisterExtractPurposeDto;
 import com.creditlens.backend.api.dto.CurrencyAmountDto;
 import com.creditlens.backend.api.dto.DelayedAmountDto;
-import com.creditlens.backend.api.dto.FinancingRequestDetailsDto;
+import com.creditlens.backend.api.dto.GetFinancingRequestDetailsResponse;
 import com.creditlens.backend.api.dto.IncomeDataDto;
 import com.creditlens.backend.api.dto.LeasingContractDto;
 import com.creditlens.backend.api.dto.LoanDto;
@@ -54,8 +54,8 @@ public final class FinancingRequestResponseMapper {
         newlyCreated);
   }
 
-  public static FinancingRequestDetailsDto toDetailsResponse(FinancingRequest source) {
-    return new FinancingRequestDetailsDto(
+  public static GetFinancingRequestDetailsResponse toDetailsResponse(FinancingRequest source) {
+    return new GetFinancingRequestDetailsResponse(
         source.id(),
         source.clientRequestId(),
         new ConsumerDto(source.consumer().id(), source.consumer().personalIdentityCode().masked()),
