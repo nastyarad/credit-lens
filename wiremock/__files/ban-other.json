@@ -4,7 +4,10 @@
     "creationTimeUtc": "2026-09-18T11:35:30Z",
     "personRequested": {"idCode": "{{jsonPath request.body '$.idCode'}}"},
     "voluntaryBanOnCredits": {"isInEffect": true, "reason": "Other"},
-    "creditInformationSummary": {"lendersCount": 1, "loanContractsCount": 2, "guaranteedLoanContractsCount": 0},
-    "repaymentsPaidLastAmount": [], "sumOfMonthlyLeasingInstalments": [], "loans": [], "incomeData": []
+    "creditInformationSummary": {"lendersCount": 2, "loanContractsCount": 2, "guaranteedLoanContractsCount": 0},
+    "repaymentsPaidLastAmount": [{"currencyCode": "EUR", "sum": 980.00}],
+    "sumOfMonthlyLeasingInstalments": [{"currencyCode": "EUR", "sum": 345.00}],
+    "loans": [{"loanType": "Leasing", "contractDate": "2024-09-01T00:00:00Z", "isLoanWithCollateral": true, "collateralTypes": ["OtherMoveableProperty"], "borrowersCount": 1, "currencyCode": "EUR", "paymentPlan": {"isInDebtArrangement": false, "isInBusinessRestructuringProgram": false}, "accuracyIsDenied": false, "lumpSumLoan": null, "runningAccountLoan": null, "leasingContract": {"contractPeriodStartDate": "2024-09-01T00:00:00Z", "transactionPrice": 26000}, "delayedAmounts": [], "isForeclosed": false}, {"loanType": "LumpSumLoan", "contractDate": "2025-05-12T00:00:00Z", "isLoanWithCollateral": false, "collateralTypes": [], "borrowersCount": 1, "currencyCode": "EUR", "paymentPlan": {"isInDebtArrangement": false, "isInBusinessRestructuringProgram": false}, "accuracyIsDenied": true, "lumpSumLoan": {"amountIssued": 7500, "amountPaid": 2100, "balance": 5400, "plannedFinalDueDate": "2028-05-12T00:00:00Z", "amortizationFrequency": 12}, "runningAccountLoan": null, "leasingContract": null, "delayedAmounts": [{"delayedInstalment": 180, "originalDueDate": "2026-08-12T00:00:00Z"}], "isForeclosed": false}],
+    "incomeData": [{"year": 2025, "months": [{"month": 12, "wagesGrossAmount": 4300, "wagesNetAmount": 3220, "benefitsGrossAmount": 0, "benefitsNetAmount": 0}]}, {"year": 2026, "months": [{"month": 7, "wagesGrossAmount": 4450, "wagesNetAmount": 3330, "benefitsGrossAmount": 0, "benefitsNetAmount": 0}]}]
   }
 }

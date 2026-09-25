@@ -4,7 +4,10 @@
     "creationTimeUtc": "2026-09-18T11:15:30Z",
     "personRequested": {"idCode": "{{jsonPath request.body '$.idCode'}}"},
     "voluntaryBanOnCredits": {"isInEffect": true, "reason": "RiskOfIdentityTheft"},
-    "creditInformationSummary": {"lendersCount": 2, "loanContractsCount": 3, "guaranteedLoanContractsCount": 1},
-    "repaymentsPaidLastAmount": [], "sumOfMonthlyLeasingInstalments": [], "loans": [], "incomeData": []
+    "creditInformationSummary": {"lendersCount": 2, "loanContractsCount": 2, "guaranteedLoanContractsCount": 0},
+    "repaymentsPaidLastAmount": [{"currencyCode": "EUR", "sum": 740.00}],
+    "sumOfMonthlyLeasingInstalments": [],
+    "loans": [{"loanType": "LumpSumLoan", "contractDate": "2023-06-20T00:00:00Z", "isLoanWithCollateral": true, "collateralTypes": ["OtherImmovableProperty"], "borrowersCount": 1, "currencyCode": "EUR", "paymentPlan": {"isInDebtArrangement": false, "isInBusinessRestructuringProgram": false}, "accuracyIsDenied": false, "lumpSumLoan": {"amountIssued": 28000, "amountPaid": 10500, "balance": 17500, "plannedFinalDueDate": "2031-06-20T00:00:00Z", "amortizationFrequency": 12}, "runningAccountLoan": null, "leasingContract": null, "delayedAmounts": [{"delayedInstalment": 420, "originalDueDate": "2026-08-20T00:00:00Z"}], "isForeclosed": false}, {"loanType": "RunningAccountLoan", "contractDate": "2025-02-10T00:00:00Z", "isLoanWithCollateral": false, "collateralTypes": [], "borrowersCount": 1, "currencyCode": "EUR", "paymentPlan": {"isInDebtArrangement": false, "isInBusinessRestructuringProgram": false}, "accuracyIsDenied": false, "lumpSumLoan": null, "runningAccountLoan": {"creditLimit": 2500, "balance": 640, "balanceDate": "2026-09-10T00:00:00Z"}, "leasingContract": null, "delayedAmounts": [], "isForeclosed": false}],
+    "incomeData": [{"year": 2026, "months": [{"month": 6, "wagesGrossAmount": 3600, "wagesNetAmount": 2720, "benefitsGrossAmount": 0, "benefitsNetAmount": 0}, {"month": 7, "wagesGrossAmount": 3650, "wagesNetAmount": 2750, "benefitsGrossAmount": 0, "benefitsNetAmount": 0}]}]
   }
 }

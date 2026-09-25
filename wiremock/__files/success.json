@@ -3,18 +3,23 @@
     "extractReference": "{{randomValue type='UUID'}}",
     "creationTimeUtc": "2026-09-18T10:15:30Z",
     "personRequested": {"idCode": "{{jsonPath request.body '$.idCode'}}"},
-    "creditInformationSummary": {"lendersCount": 2, "loanContractsCount": 1, "guaranteedLoanContractsCount": 0},
-    "repaymentsPaidLastAmount": [{"currencyCode": "EUR", "sum": 125.50}],
-    "sumOfMonthlyLeasingInstalments": [{"currencyCode": "EUR", "sum": 250.00}],
+    "creditInformationSummary": {"lendersCount": 3, "loanContractsCount": 2, "guaranteedLoanContractsCount": 0},
+    "repaymentsPaidLastAmount": [{"currencyCode": "EUR", "sum": 1250.50}],
+    "sumOfMonthlyLeasingInstalments": [{"currencyCode": "EUR", "sum": 289.00}],
     "loans": [{
-      "loanType": "LumpSumLoan", "contractDate": "2025-01-15T00:00:00Z", "isLoanWithCollateral": true,
-      "collateralTypes": ["ApartmentOrRealEstate"], "borrowersCount": 1, "currencyCode": "EUR",
+      "loanType": "LumpSumLoan", "contractDate": "2024-04-15T00:00:00Z", "isLoanWithCollateral": true,
+      "collateralTypes": ["ApartmentOrRealEstate"], "borrowersCount": 2, "currencyCode": "EUR",
       "paymentPlan": {"isInDebtArrangement": false, "isInBusinessRestructuringProgram": false},
-      "accuracyIsDenied": false,
-      "lumpSumLoan": {"amountIssued": 10000, "amountPaid": 1500, "balance": 8500, "plannedFinalDueDate": "2030-01-15T00:00:00Z", "amortizationFrequency": 12},
-      "delayedAmounts": [{"delayedInstalment": 100, "originalDueDate": "2026-08-15T00:00:00Z"}],
-      "isForeclosed": false
+      "accuracyIsDenied": false, "lumpSumLoan": {"amountIssued": 18500, "amountPaid": 6200, "balance": 12300, "plannedFinalDueDate": "2029-04-15T00:00:00Z", "amortizationFrequency": 12},
+      "runningAccountLoan": null, "leasingContract": null, "delayedAmounts": [], "isForeclosed": false
+    }, {
+      "loanType": "RunningAccountLoan", "contractDate": "2025-09-01T00:00:00Z", "isLoanWithCollateral": false,
+      "collateralTypes": [], "borrowersCount": 1, "currencyCode": "EUR",
+      "paymentPlan": {"isInDebtArrangement": false, "isInBusinessRestructuringProgram": false},
+      "accuracyIsDenied": false, "lumpSumLoan": null,
+      "runningAccountLoan": {"creditLimit": 4000, "balance": 860, "balanceDate": "2026-09-15T00:00:00Z"},
+      "leasingContract": null, "delayedAmounts": [{"delayedInstalment": 95, "originalDueDate": "2026-08-15T00:00:00Z"}], "isForeclosed": false
     }],
-    "incomeData": [{"year": 2026, "months": [{"month": 8, "wagesGrossAmount": 4000, "wagesNetAmount": 3000, "benefitsGrossAmount": 0, "benefitsNetAmount": 0}]}]
+    "incomeData": [{"year": 2025, "months": [{"month": 11, "wagesGrossAmount": 3850, "wagesNetAmount": 2910, "benefitsGrossAmount": 0, "benefitsNetAmount": 0}]}, {"year": 2026, "months": [{"month": 7, "wagesGrossAmount": 4050, "wagesNetAmount": 3040, "benefitsGrossAmount": 120, "benefitsNetAmount": 95}, {"month": 8, "wagesGrossAmount": 4100, "wagesNetAmount": 3080, "benefitsGrossAmount": 0, "benefitsNetAmount": 0}]}]
   }
 }

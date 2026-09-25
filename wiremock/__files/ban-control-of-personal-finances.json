@@ -4,7 +4,10 @@
     "creationTimeUtc": "2026-09-18T11:25:30Z",
     "personRequested": {"idCode": "{{jsonPath request.body '$.idCode'}}"},
     "voluntaryBanOnCredits": {"isInEffect": true, "reason": "ControlOfPersonalFinances"},
-    "creditInformationSummary": {"lendersCount": 4, "loanContractsCount": 5, "guaranteedLoanContractsCount": 1},
-    "repaymentsPaidLastAmount": [], "sumOfMonthlyLeasingInstalments": [], "loans": [], "incomeData": []
+    "creditInformationSummary": {"lendersCount": 3, "loanContractsCount": 3, "guaranteedLoanContractsCount": 1},
+    "repaymentsPaidLastAmount": [{"currencyCode": "EUR", "sum": 410.00}],
+    "sumOfMonthlyLeasingInstalments": [{"currencyCode": "EUR", "sum": 199.00}],
+    "loans": [{"loanType": "RunningAccountLoan", "contractDate": "2025-03-05T00:00:00Z", "isLoanWithCollateral": false, "collateralTypes": [], "borrowersCount": 1, "currencyCode": "EUR", "paymentPlan": {"isInDebtArrangement": true, "isInBusinessRestructuringProgram": false}, "accuracyIsDenied": false, "lumpSumLoan": null, "runningAccountLoan": {"creditLimit": 6000, "balance": 3140, "balanceDate": "2026-09-12T00:00:00Z"}, "leasingContract": null, "delayedAmounts": [{"delayedInstalment": 210, "originalDueDate": "2026-08-05T00:00:00Z"}], "isForeclosed": false}, {"loanType": "GuaranteeReceivable", "contractDate": "2024-11-18T00:00:00Z", "isLoanWithCollateral": true, "collateralTypes": ["PersonalGuarantee"], "borrowersCount": 1, "currencyCode": "EUR", "paymentPlan": {"isInDebtArrangement": true, "isInBusinessRestructuringProgram": false}, "accuracyIsDenied": false, "lumpSumLoan": null, "runningAccountLoan": null, "leasingContract": null, "delayedAmounts": [], "isForeclosed": false}, {"loanType": "Leasing", "contractDate": "2025-08-01T00:00:00Z", "isLoanWithCollateral": true, "collateralTypes": ["OtherMoveableProperty"], "borrowersCount": 1, "currencyCode": "EUR", "paymentPlan": {"isInDebtArrangement": true, "isInBusinessRestructuringProgram": false}, "accuracyIsDenied": false, "lumpSumLoan": null, "runningAccountLoan": null, "leasingContract": {"contractPeriodStartDate": "2025-08-01T00:00:00Z", "transactionPrice": 18500}, "delayedAmounts": [], "isForeclosed": false}],
+    "incomeData": [{"year": 2026, "months": [{"month": 5, "wagesGrossAmount": 2950, "wagesNetAmount": 2230, "benefitsGrossAmount": 180, "benefitsNetAmount": 145}, {"month": 6, "wagesGrossAmount": 3000, "wagesNetAmount": 2260, "benefitsGrossAmount": 180, "benefitsNetAmount": 145}]}]
   }
 }
