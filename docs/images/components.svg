@@ -19,5 +19,6 @@
     <rect class="box" x="470" y="145" width="190" height="48" rx="8"/><text x="565" y="175" text-anchor="middle">CreditExtractRepository</text>
     <rect class="box" x="470" y="205" width="250" height="48" rx="8"/><text x="595" y="235" text-anchor="middle">PositiveCreditRegisterClient</text>
     <path class="line" d="M175 126 H245"/><path class="line" d="M385 126 H430 V49 H470"/><path class="line" d="M430 109 H470"/><path class="line" d="M430 169 H470"/><path class="line" d="M430 229 H470"/>
+    <path d="M430 49 V229" stroke="#425466" stroke-width="2" fill="none"/>
   </g>
 </svg>
