@@ -1,4 +1,4 @@
-import { ShieldAlert } from "lucide-react";
+import { ShieldAlert, ShieldCheck } from "lucide-react";
 import type { FinancingRequestResponse } from "../api/types";
 import {
   purposeLabels,
@@ -28,7 +28,11 @@ export function FinancingRequestResult({ result }: Props) {
         aria-labelledby="ban-title"
       >
         <span className="ban-icon">
-          <ShieldAlert aria-hidden="true" />
+          {active ? (
+            <ShieldAlert aria-hidden="true" />
+          ) : (
+            <ShieldCheck aria-hidden="true" />
+          )}
         </span>
         <div>
           <p className="kicker">
