@@ -158,12 +158,13 @@ production deployment.
 
 ## Effort
 
-**Candidate action required:** replace this placeholder with the actual time
-spent before submission. No reliable effort value is recorded in the
-repository.
+**Total effort:** approximately **10–13 hours**.
 
-- Total effort: `[enter actual hours]`
-- Optional breakdown: `[design / implementation / tests / documentation]`
+- **10 h 00 min documented:** 9 h 10 min reconstructed from Git commit
+  sessions, plus 50 min for design development and walkthrough-video
+  preparation.
+- The stated range allows for local work before/after commits that Git does
+  not capture; it is an estimate, not a precise timesheet.
 
 ## Further documentation
 
