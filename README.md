@@ -41,14 +41,14 @@ docker compose down
 See [development guidance](docs/development.md) for manual startup,
 configuration, fixtures, seed data, real SMTP, and troubleshooting.
 
-## One-minute demo
+## Two-minute demo
 
 1. Open `http://localhost:5173` and start a new request.
 2. Use identity code `070790-123A` and any listed purpose. WireMock returns an
    extract with an active `ControlOfPersonalFinances` voluntary ban.
 3. Open **Request history**, search for the same identity code, and view the
    saved extract details.
-4. Wait for the one-minute monitoring schedule, then open Mailpit at
+4. Wait for the two-minute monitoring schedule, then open Mailpit at
    `http://localhost:8025` and inspect the report.
 5. Open `http://localhost:8080/actuator/health` and confirm the backend reports
    `UP`.
@@ -78,7 +78,7 @@ curl -X POST http://localhost:8080/api/v1/financing-requests \
 | Not included | Public or production hosting | Local PoC deployment only |
 | Not included | Authentication, authorization, encryption, and retention controls | Required before production use |
 | Not included | Automated browser-to-email end-to-end test | The full Compose happy path is manual |
-| Optional | One-minute walkthrough video | Not stored in this repository |
+| Optional | Two-minute walkthrough video | Not stored in this repository |
 
 ## Architecture
 
@@ -116,7 +116,7 @@ cd monitoring-service
 ```
 
 For a full-system smoke check, start Compose and follow the
-[one-minute demo](#one-minute-demo). This verifies the browser-to-backend,
+[two-minute demo](#two-minute-demo). This verifies the browser-to-backend,
 PCR mock, persistence, monitoring, and Mailpit path manually.
 
 ## Key assumptions and trade-offs

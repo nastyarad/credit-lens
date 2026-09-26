@@ -480,6 +480,10 @@ code,
   color: var(--muted);
   line-height: 1.4;
 }
+.ban-notice:not(.active) .kicker,
+.ban-notice:not(.active) .ban-icon {
+  color: var(--positive);
+}
 .ban-notice.active .ban-icon {
   color: var(--attention);
 }
