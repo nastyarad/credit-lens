@@ -27,7 +27,7 @@ cd backend
 ```
 
 In a third terminal, start the monitoring service. Flyway creates its separate
-schema, and the scheduler begins using the default one-minute interval:
+schema, and the scheduler begins using the default two-minute interval:
 
 ```bash
 cd monitoring-service
@@ -97,7 +97,7 @@ manual defaults point to published localhost ports.
 | `MONITORING_DB_URL` | `jdbc:postgresql://localhost:5433/credit_lens_monitoring` | Monitoring JDBC URL |
 | `MONITORING_DB_USER` | `credit_lens_monitoring` | Monitoring database user |
 | `MONITORING_DB_PASSWORD` | `credit_lens_monitoring` | Monitoring database password |
-| `MONITORING_CRON` | `0 * * * * *` | UTC Spring cron schedule |
+| `MONITORING_CRON` | `0 */2 * * * *` | UTC Spring cron schedule |
 | `MONITORING_INITIAL_LOOKBACK` | `PT5M` | First interval lookback |
 | `MONITORING_RECIPIENT` | `pcr_monitoring@dansketest.dk` | Fixed report recipient by default |
 | `SMTP_HOST` | `localhost` | SMTP host for manual startup |
